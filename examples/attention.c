@@ -45,7 +45,7 @@ matrix network_loss_data(network *net, data test)
         for(b = 0; b < net->batch; ++b)
         {
             if(i+b == test.X.rows) break;
-            int t = max_index(y + b*test.y.cols, 1000);
+            /*int t =*/ max_index(y + b*test.y.cols, 1000);
             float err = sum_array(delta + b*net->outputs, net->outputs);
             pred.vals[i+b][0] = -err;
             //pred.vals[i+b][0] = 1-delta[b*net->outputs + t];
@@ -130,7 +130,7 @@ void train_attention(char *datacfg, char *cfgfile, char *weightfile, int *gpus, 
     load_thread = load_data(args);
 
     int epoch = (*net->seen)/N;
-    while(get_current_batch(net) < net->max_batches || net->max_batches == 0)
+    while((int)get_current_batch(net) < net->max_batches || net->max_batches == 0)
     {
         time = what_time_is_it_now();
 
@@ -192,7 +192,7 @@ void train_attention(char *datacfg, char *cfgfile, char *weightfile, int *gpus, 
         }
         free_data(best);
         printf("\n");
-        image im = float_to_image(64,64,3,resized.X.vals[0]);
+        /*image im =*/ float_to_image(64,64,3,resized.X.vals[0]);
         //show_image(im, "orig");
         //cvWaitKey(100);
         /*
@@ -226,7 +226,7 @@ void train_attention(char *datacfg, char *cfgfile, char *weightfile, int *gpus, 
         avg_att_loss = avg_att_loss*.9 + aloss*.1;
 
         printf("%ld, %.3f: Att: %f, %f avg, Class: %f, %f avg, %f rate, %lf seconds, %ld images\n", get_current_batch(net), (float)(*net->seen)/N, aloss, avg_att_loss, closs, avg_cls_loss, get_current_rate(net), what_time_is_it_now()-time, *net->seen);
-        if(*net->seen/N > epoch)
+        if((int)*net->seen/N > epoch)
         {
             epoch = *net->seen/N;
             char buff[256];
@@ -488,7 +488,7 @@ void run_attention(int argc, char **argv)
     char *cfg = argv[4];
     char *weights = (argc > 5) ? argv[5] : 0;
     char *filename = (argc > 6) ? argv[6]: 0;
-    char *layer_s = (argc > 7) ? argv[7]: 0;
+    //char *layer_s = (argc > 7) ? argv[7]: 0;
     if(0==strcmp(argv[2], "predict")) predict_attention(data, cfg, weights, filename, top);
     else if(0==strcmp(argv[2], "train")) train_attention(data, cfg, weights, gpus, ngpus, clear);
     else if(0==strcmp(argv[2], "valid")) validate_attention_single(data, cfg, weights);

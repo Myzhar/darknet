@@ -503,7 +503,7 @@ void train_dcgan(char *cfg, char *weight, char *acfg, char *aweight, int clear, 
 
     //data generated = copy_data(train);
 
-    while (get_current_batch(gnet) < gnet->max_batches)
+    while ((int)get_current_batch(gnet) < gnet->max_batches)
     {
         start += 1;
         i += 1;
@@ -695,7 +695,7 @@ void train_colorizer(char *cfg, char *weight, char *acfg, char *aweight, int cle
 
     //data generated = copy_data(train);
 
-    while (get_current_batch(net) < net->max_batches)
+    while ((int)get_current_batch(net) < net->max_batches)
     {
         i += 1;
         time=clock();

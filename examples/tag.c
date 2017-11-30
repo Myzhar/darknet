@@ -43,7 +43,7 @@ void train_tag(char *cfgfile, char *weightfile, int clear)
 
     load_thread = load_data_in_thread(args);
     int epoch = (*net->seen)/N;
-    while(get_current_batch(net) < net->max_batches || net->max_batches == 0)
+    while((int)get_current_batch(net) < net->max_batches || net->max_batches == 0)
     {
         time=clock();
         pthread_join(load_thread, 0);
@@ -57,7 +57,7 @@ void train_tag(char *cfgfile, char *weightfile, int clear)
         avg_loss = avg_loss*.9 + loss*.1;
         printf("%ld, %.3f: %f, %f avg, %f rate, %lf seconds, %ld images\n", get_current_batch(net), (float)(*net->seen)/N, loss, avg_loss, get_current_rate(net), sec(clock()-time), *net->seen);
         free_data(train);
-        if(*net->seen/N > epoch)
+        if((int)(*net->seen)/N > epoch)
         {
             epoch = *net->seen/N;
             char buff[256];

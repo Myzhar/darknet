@@ -110,12 +110,12 @@ float_pair get_seq2seq_data(char **source, char **dest, int n, int characters, s
     for(i = 0; i < batch; ++i)
     {
         int index = rand()%n;
-        int slen = strlen(source[index]);
-        int dlen = strlen(dest[index]);
+        //int slen = strlen(source[index]);
+        //int dlen = strlen(dest[index]);
         for(j = 0; j < steps; ++j)
         {
-            unsigned char curr = source[index][j];
-            unsigned char next = dest[index][j];
+            /*unsigned char*/ int curr = source[index][j];
+            /*unsigned char*/ int next = dest[index][j];
 
             x[(j*batch + i)*characters + curr] = 1;
             y[(j*batch + i)*characters + next] = 1;
@@ -145,8 +145,8 @@ float_pair get_rnn_data(unsigned char *text, size_t *offsets, int characters, si
     {
         for(j = 0; j < steps; ++j)
         {
-            unsigned char curr = text[(offsets[i])%len];
-            unsigned char next = text[(offsets[i] + 1)%len];
+            /*unsigned char*/ int curr = text[(offsets[i])%len];
+            /*unsigned char*/ int next = text[(offsets[i] + 1)%len];
 
             x[(j*batch + i)*characters + curr] = 1;
             y[(j*batch + i)*characters + next] = 1;
@@ -207,7 +207,7 @@ void train_char_rnn(char *cfgfile, char *weightfile, char *filename, int clear, 
     }
 
     clock_t time;
-    while(get_current_batch(net) < net->max_batches)
+    while((int)get_current_batch(net) < net->max_batches)
     {
         i += 1;
         time=clock();

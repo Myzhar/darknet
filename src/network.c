@@ -94,7 +94,8 @@ float get_current_rate(network *net)
     size_t batch_num = get_current_batch(net);
     int i;
     float rate;
-    if (batch_num < net->burn_in) return net->learning_rate * pow((float)batch_num / net->burn_in, net->power);
+    if ((int)batch_num < net->burn_in)
+        return net->learning_rate * pow((float)batch_num / net->burn_in, net->power);
     switch (net->policy)
     {
     case CONSTANT:
@@ -105,7 +106,8 @@ float get_current_rate(network *net)
         rate = net->learning_rate;
         for(i = 0; i < net->num_steps; ++i)
         {
-            if(net->steps[i] > batch_num) return rate;
+            if(net->steps[i] > (int)batch_num)
+                return rate;
             rate *= net->scales[i];
         }
         return rate;
@@ -310,7 +312,8 @@ float train_network_datum(network *net)
     forward_network(net);
     backward_network(net);
     float error = *net->cost;
-    if(((*net->seen)/net->batch)%net->subdivisions == 0) update_network(net);
+    if(((*net->seen)/net->batch)%net->subdivisions == 0)
+        update_network(net);
     return error;
 }
 

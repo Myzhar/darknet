@@ -19,6 +19,8 @@ OPTIONS = GPU CUDNN OPENCV OPENMP
 
 DEFINES += $$OPTIONS
 
+
+
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
@@ -77,7 +79,9 @@ HEADERS += \
 LIBS += \
     -lopencv_core \
     -lopencv_imgproc \
-    -lopencv_highgui
+    -lopencv_highgui \
+    -lgomp \
+    -lpthread
 
 #######################################################################################################
 # CUDA
@@ -89,31 +93,33 @@ QMAKE_LIBDIR += $$CUDA_DIR/lib64     # Note I'm using a 64 bi
 LIBS += -lcuda -lcudart -lcublas -lcurand -lcudnn
 
 # GPU architecture
-CUDA_ARCH     = -arch=sm_30 \
-                -gencode=arch=compute_20,code=sm_20 \
-                -gencode=arch=compute_30,code=sm_30 \
-                -gencode=arch=compute_50,code=sm_50 \
-                -gencode=arch=compute_52,code=sm_52 \
-                -gencode=arch=compute_60,code=sm_60 \
-                -gencode=arch=compute_61,code=sm_61 \
-                -gencode=arch=compute_61,code=compute_61
+#CUDA_ARCH     = -arch=sm_30 \
+#                -gencode=arch=compute_20,code=sm_20 \
+#                -gencode=arch=compute_30,code=sm_30 \
+#                -gencode=arch=compute_50,code=sm_50 \
+#                -gencode=arch=compute_52,code=sm_52 \
+#                -gencode=arch=compute_60,code=sm_60 \
+#                -gencode=arch=compute_61,code=sm_61 \
+#                -gencode=arch=compute_61,code=compute_61
+CUDA_ARCH = -gencode arch=compute_61,code=[sm_61,compute_61]
 
 # Here are some NVCC flags I've always used by default.
-NVCCFLAGS     = --compiler-options -fno-strict-aliasing -use_fast_math --ptxas-options=-v
+#NVCCFLAGS     = --compiler-options -fno-strict-aliasing -use_fast_math --ptxas-options=-v
+NVCCFLAGS     = --compiler-options
 
 # Prepare the extra compiler configuration (taken from the nvidia forum - i'm not an expert in this part)
 CUDA_INC = $$join(INCLUDEPATH,' -I','-I',' ')
 
 CUDA_OPT = $$join(OPTIONS,' -D','-D',' ')
 
-cuda.commands = $$CUDA_DIR/bin/nvcc $$CUDA_OPT -m64 -O3 $$CUDA_ARCH -c $$NVCCFLAGS \
-                $$CUDA_INC $$LIBS  ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT} \
+cuda.commands = $$CUDA_DIR/bin/nvcc $$CUDA_ARCH $$CUDA_OPT -m64 -O3 -c $$NVCCFLAGS \
+                $$CUDA_INC $$LIBS ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT} \
                 #2>&1 | sed -r \"s/\\(([0-9]+)\\)/:\\1/g\" 1>&2
 # nvcc error printout format ever so slightly different from gcc
 # http://forums.nvidia.com/index.php?showtopic=171651
 
 cuda.dependency_type = TYPE_C # there was a typo here. Thanks workmate!
-cuda.depend_command = $$CUDA_DIR/bin/nvcc -O3 -M $$CUDA_INC $$NVCCFLAGS   ${QMAKE_FILE_NAME}
+cuda.depend_command = $$CUDA_DIR/bin/nvcc $$ -O3 -M $$CUDA_INC $$NVCCFLAGS ${QMAKE_FILE_NAME}
 
 cuda.input = CUDA_SOURCES
 cuda.output = $$OUT_PWD/${QMAKE_FILE_BASE}.o
@@ -202,7 +208,9 @@ SOURCES += \
 
 SOURCES -= $$CUDA_SOURCES # Remove from compilation, leaving in the project tree
 
-
+QMAKE_CFLAGS    += -fopenmp -fPIC -Wno-unused-parameter
+QMAKE_CXXFLAGS  += -fopenmp -fPIC -Wno-unused-parameter
+QMAKE_LFLAGS    += -fopenmp
 
 
 

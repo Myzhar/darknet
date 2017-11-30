@@ -54,7 +54,7 @@ void train_coco(char *cfgfile, char *weightfile)
     pthread_t load_thread = load_data_in_thread(args);
     clock_t time;
     //while(i*imgs < N*120){
-    while(get_current_batch(net) < net->max_batches)
+    while((int)get_current_batch(net) < net->max_batches)
     {
         i += 1;
         time=clock();
