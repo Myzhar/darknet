@@ -244,12 +244,17 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
         int class = -1;
         for(j = 0; j < classes; ++j){
             if (probs[i][j] > thresh){
+                char buf[32];
+                sprintf( buf, " %.0f%%", probs[i][j]*100 );
+                
                 if (class < 0) {
                     strcat(labelstr, names[j]);
+                    strcat(labelstr, buf);
                     class = j;
                 } else {
                     strcat(labelstr, ", ");
                     strcat(labelstr, names[j]);
+                    strcat(labelstr, buf);
                 }
                 printf("%s: %.0f%%\n", names[j], probs[i][j]*100);
             }
