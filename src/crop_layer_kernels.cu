@@ -18,7 +18,7 @@ __device__ float get_pixel_kernel(float *image, int w, int h, int x, int y, int 
 __device__ float3 rgb_to_hsv_kernel(float3 rgb)
 {
     float r = rgb.x;
-    float g = rgb.y; 
+    float g = rgb.y;
     float b = rgb.z;
 
     float h, s, v;
@@ -26,16 +26,24 @@ __device__ float3 rgb_to_hsv_kernel(float3 rgb)
     float min = (r < g) ? ( (r < b) ? r : b) : ( (g < b) ? g : b);
     float delta = max - min;
     v = max;
-    if(max == 0){
+    if(max == 0)
+    {
         s = 0;
         h = -1;
-    }else{
+    }
+    else
+    {
         s = delta/max;
-        if(r == max){
+        if(r == max)
+        {
             h = (g - b) / delta;
-        } else if (g == max) {
+        }
+        else if (g == max)
+        {
             h = 2 + (b - r) / delta;
-        } else {
+        }
+        else
+        {
             h = 4 + (r - g) / delta;
         }
         if (h < 0) h += 6;
@@ -46,32 +54,58 @@ __device__ float3 rgb_to_hsv_kernel(float3 rgb)
 __device__ float3 hsv_to_rgb_kernel(float3 hsv)
 {
     float h = hsv.x;
-    float s = hsv.y; 
+    float s = hsv.y;
     float v = hsv.z;
 
     float r, g, b;
     float f, p, q, t;
 
-    if (s == 0) {
+    if (s == 0)
+    {
         r = g = b = v;
-    } else {
+    }
+    else
+    {
         int index = (int) floorf(h);
         f = h - index;
         p = v*(1-s);
         q = v*(1-s*f);
         t = v*(1-s*(1-f));
-        if(index == 0){
-            r = v; g = t; b = p;
-        } else if(index == 1){
-            r = q; g = v; b = p;
-        } else if(index == 2){
-            r = p; g = v; b = t;
-        } else if(index == 3){
-            r = p; g = q; b = v;
-        } else if(index == 4){
-            r = t; g = p; b = v;
-        } else {
-            r = v; g = p; b = q;
+        if(index == 0)
+        {
+            r = v;
+            g = t;
+            b = p;
+        }
+        else if(index == 1)
+        {
+            r = q;
+            g = v;
+            b = p;
+        }
+        else if(index == 2)
+        {
+            r = p;
+            g = v;
+            b = t;
+        }
+        else if(index == 3)
+        {
+            r = p;
+            g = q;
+            b = v;
+        }
+        else if(index == 4)
+        {
+            r = t;
+            g = p;
+            b = v;
+        }
+        else
+        {
+            r = v;
+            g = p;
+            b = q;
         }
     }
     r = (r < 0) ? 0 : ((r > 1) ? 1 : r);
@@ -88,10 +122,10 @@ __device__ float bilinear_interpolate_kernel(float *image, int w, int h, float x
     float dx = x - ix;
     float dy = y - iy;
 
-    float val = (1-dy) * (1-dx) * get_pixel_kernel(image, w, h, ix, iy, c) + 
-        dy     * (1-dx) * get_pixel_kernel(image, w, h, ix, iy+1, c) + 
-        (1-dy) *   dx   * get_pixel_kernel(image, w, h, ix+1, iy, c) +
-        dy     *   dx   * get_pixel_kernel(image, w, h, ix+1, iy+1, c);
+    float val = (1-dy) * (1-dx) * get_pixel_kernel(image, w, h, ix, iy, c) +
+                dy     * (1-dx) * get_pixel_kernel(image, w, h, ix, iy+1, c) +
+                (1-dy) *   dx   * get_pixel_kernel(image, w, h, ix+1, iy, c) +
+                dy     *   dx   * get_pixel_kernel(image, w, h, ix+1, iy+1, c);
     return val;
 }
 
@@ -123,12 +157,15 @@ __global__ void levels_image_kernel(float *image, float *rand, int batch, int w,
     float g = image[x + w*(y + h*1)];
     float b = image[x + w*(y + h*2)];
     float3 rgb = make_float3(r,g,b);
-    if(train){
+    if(train)
+    {
         float3 hsv = rgb_to_hsv_kernel(rgb);
         hsv.y *= saturation;
         hsv.z *= exposure;
         rgb = hsv_to_rgb_kernel(hsv);
-    } else {
+    }
+    else
+    {
         shift = 0;
     }
     image[x + w*(y + h*0)] = rgb.x*scale + translate + (rshift - .5f)*shift;
@@ -162,7 +199,8 @@ __global__ void forward_crop_layer_kernel(float *input, float *rand, int size, i
     float dh = (h - crop_height)*r5;
     flip = (flip && (r6 > .5f));
     angle = 2*angle*r7 - angle;
-    if(!train){
+    if(!train)
+    {
         dw = (w - crop_width)/2.f;
         dh = (h - crop_height)/2.f;
         flip = 0;
@@ -171,7 +209,7 @@ __global__ void forward_crop_layer_kernel(float *input, float *rand, int size, i
 
     input += w*h*c*b;
 
-    float x = (flip) ? w - dw - j - 1 : j + dw;    
+    float x = (flip) ? w - dw - j - 1 : j + dw;
     float y = i + dh;
 
     float rx = cosf(angle)*(x-cx) - sinf(angle)*(y-cy) + cx;
@@ -188,7 +226,8 @@ extern "C" void forward_crop_layer_gpu(crop_layer layer, network net)
 
     float scale = 2;
     float translate = -1;
-    if(layer.noadjust){
+    if(layer.noadjust)
+    {
         scale = 1;
         translate = 0;
     }
@@ -203,23 +242,23 @@ extern "C" void forward_crop_layer_gpu(crop_layer layer, network net)
     forward_crop_layer_kernel<<<cuda_gridsize(size), BLOCK>>>(net.input_gpu, layer.rand_gpu, size, layer.c, layer.h, layer.w, layer.out_h, layer.out_w, net.train, layer.flip, radians, layer.output_gpu);
     check_error(cudaPeekAtLastError());
 
-/*
-       cuda_pull_array(layer.output_gpu, layer.output, size);
-       image im = float_to_image(layer.crop_width, layer.crop_height, layer.c, layer.output + 0*(size/layer.batch));
-       image im2 = float_to_image(layer.crop_width, layer.crop_height, layer.c, layer.output + 1*(size/layer.batch));
-       image im3 = float_to_image(layer.crop_width, layer.crop_height, layer.c, layer.output + 2*(size/layer.batch));
+    /*
+           cuda_pull_array(layer.output_gpu, layer.output, size);
+           image im = float_to_image(layer.crop_width, layer.crop_height, layer.c, layer.output + 0*(size/layer.batch));
+           image im2 = float_to_image(layer.crop_width, layer.crop_height, layer.c, layer.output + 1*(size/layer.batch));
+           image im3 = float_to_image(layer.crop_width, layer.crop_height, layer.c, layer.output + 2*(size/layer.batch));
 
-       translate_image(im, -translate);
-       scale_image(im, 1/scale);
-       translate_image(im2, -translate);
-       scale_image(im2, 1/scale);
-       translate_image(im3, -translate);
-       scale_image(im3, 1/scale);
-       
-       show_image(im, "cropped");
-       show_image(im2, "cropped2");
-       show_image(im3, "cropped3");
-       cvWaitKey(0);
-       */
+           translate_image(im, -translate);
+           scale_image(im, 1/scale);
+           translate_image(im2, -translate);
+           scale_image(im2, 1/scale);
+           translate_image(im3, -translate);
+           scale_image(im3, 1/scale);
+
+           show_image(im, "cropped");
+           show_image(im2, "cropped2");
+           show_image(im3, "cropped3");
+           cvWaitKey(0);
+           */
 }
 

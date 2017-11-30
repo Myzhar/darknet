@@ -4,19 +4,30 @@ void fix_data_captcha(data d, int mask)
 {
     matrix labels = d.y;
     int i, j;
-    for(i = 0; i < d.y.rows; ++i){
-        for(j = 0; j < d.y.cols; j += 2){
-            if (mask){
-                if(!labels.vals[i][j]){
+    for(i = 0; i < d.y.rows; ++i)
+    {
+        for(j = 0; j < d.y.cols; j += 2)
+        {
+            if (mask)
+            {
+                if(!labels.vals[i][j])
+                {
                     labels.vals[i][j] = SECRET_NUM;
                     labels.vals[i][j+1] = SECRET_NUM;
-                }else if(labels.vals[i][j+1]){
+                }
+                else if(labels.vals[i][j+1])
+                {
                     labels.vals[i][j] = 0;
                 }
-            } else{
-                if (labels.vals[i][j]) {
+            }
+            else
+            {
+                if (labels.vals[i][j])
+                {
                     labels.vals[i][j+1] = 0;
-                } else {
+                }
+                else
+                {
                     labels.vals[i][j+1] = 1;
                 }
             }
@@ -37,9 +48,12 @@ void train_captcha(char *cfgfile, char *weightfile)
     int solved = 1;
     list *plist;
     char **labels = get_labels("/data/captcha/reimgs.labels.list");
-    if (solved){
+    if (solved)
+    {
         plist = get_paths("/data/captcha/reimgs.solved.list");
-    }else{
+    }
+    else
+    {
         plist = get_paths("/data/captcha/reimgs.raw.list");
     }
     char **paths = (char **)list_to_array(plist);
@@ -61,7 +75,8 @@ void train_captcha(char *cfgfile, char *weightfile)
     args.type = CLASSIFICATION_DATA;
 
     load_thread = load_data_in_thread(args);
-    while(1){
+    while(1)
+    {
         ++i;
         time=clock();
         pthread_join(load_thread, 0);
@@ -82,7 +97,8 @@ void train_captcha(char *cfgfile, char *weightfile)
         avg_loss = avg_loss*.9 + loss*.1;
         printf("%d: %f, %f avg, %lf seconds, %ld images\n", i, loss, avg_loss, sec(clock()-time), *net->seen);
         free_data(train);
-        if(i%100==0){
+        if(i%100==0)
+        {
             char buff[256];
             sprintf(buff, "/home/pjreddie/imagenet_backup/%s_%d.weights",base, i);
             save_weights(net, buff);
@@ -100,10 +116,14 @@ void test_captcha(char *cfgfile, char *weightfile, char *filename)
     char buff[256];
     char *input = buff;
     int indexes[26];
-    while(1){
-        if(filename){
+    while(1)
+    {
+        if(filename)
+        {
             strncpy(input, filename, 256);
-        }else{
+        }
+        else
+        {
             //printf("Enter Image Path: ");
             //fflush(stdout);
             input = fgets(input, 256, stdin);
@@ -115,7 +135,8 @@ void test_captcha(char *cfgfile, char *weightfile, char *filename)
         float *predictions = network_predict(net, X);
         top_predictions(net, 26, indexes);
         //printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
-        for(i = 0; i < 26; ++i){
+        for(i = 0; i < 26; ++i)
+        {
             int index = indexes[i];
             if(i != 0) printf(", ");
             printf("%s %f", names[index], predictions[index]);
@@ -139,22 +160,26 @@ void valid_captcha(char *cfgfile, char *weightfile, char *filename)
     set_batch_network(net, 1);
     srand(2222222);
     int i, j;
-    for(i = 0; i < N; ++i){
+    for(i = 0; i < N; ++i)
+    {
         if (i%100 == 0) fprintf(stderr, "%d\n", i);
         image im = load_image_color(paths[i], net->w, net->h);
         float *X = im.data;
         float *predictions = network_predict(net, X);
         //printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
         int truth = -1;
-        for(j = 0; j < 13; ++j){
+        for(j = 0; j < 13; ++j)
+        {
             if (strstr(paths[i], labels[j])) truth = j;
         }
-        if (truth == -1){
+        if (truth == -1)
+        {
             fprintf(stderr, "bad: %s\n", paths[i]);
             return;
         }
         printf("%d, ", truth);
-        for(j = 0; j < outputs; ++j){
+        for(j = 0; j < outputs; ++j)
+        {
             if (j != 0) printf(", ");
             printf("%f", predictions[j]);
         }
@@ -334,7 +359,8 @@ void test_captcha(char *cfgfile, char *weightfile)
     */
 void run_captcha(int argc, char **argv)
 {
-    if(argc < 4){
+    if(argc < 4)
+    {
         fprintf(stderr, "usage: %s %s [train/test/valid] [cfg] [weights (optional)]\n", argv[0], argv[1]);
         return;
     }

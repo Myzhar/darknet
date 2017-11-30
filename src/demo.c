@@ -50,11 +50,16 @@ void *detect_in_thread(void *ptr)
     memcpy(predictions[demo_index], prediction, l.outputs*sizeof(float));
     mean_arrays(predictions, demo_frame, l.outputs, avg);
     l.output = avg;
-    if(l.type == DETECTION){
+    if(l.type == DETECTION)
+    {
         get_detection_boxes(l, 1, 1, demo_thresh, probs, boxes, 0);
-    } else if (l.type == REGION){
+    }
+    else if (l.type == REGION)
+    {
         get_region_boxes(l, buff[0].w, buff[0].h, net->w, net->h, demo_thresh, probs, boxes, 0, 0, 0, demo_hier, 1);
-    } else {
+    }
+    else
+    {
         error("Last layer must produce detections\n");
     }
     if (nms > 0) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
@@ -84,17 +89,26 @@ void *display_in_thread(void *ptr)
     show_image_cv(buff[(buff_index + 1)%3], "Demo", ipl);
     int c = cvWaitKey(1);
     if (c != -1) c = c%256;
-    if (c == 27) {
+    if (c == 27)
+    {
         demo_done = 1;
         return 0;
-    } else if (c == 82) {
+    }
+    else if (c == 82)
+    {
         demo_thresh += .02;
-    } else if (c == 84) {
+    }
+    else if (c == 84)
+    {
         demo_thresh -= .02;
         if(demo_thresh <= .02) demo_thresh = .02;
-    } else if (c == 83) {
+    }
+    else if (c == 83)
+    {
         demo_hier += .02;
-    } else if (c == 81) {
+    }
+    else if (c == 81)
+    {
         demo_hier -= .02;
         if(demo_hier <= .0) demo_hier = .0;
     }
@@ -103,14 +117,16 @@ void *display_in_thread(void *ptr)
 
 void *display_loop(void *ptr)
 {
-    while(1){
+    while(1)
+    {
         display_in_thread(0);
     }
 }
 
 void *detect_loop(void *ptr)
 {
-    while(1){
+    while(1)
+    {
         detect_in_thread(0);
     }
 }
@@ -133,19 +149,25 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
 
     srand(2222222);
 
-    if(filename){
+    if(filename)
+    {
         printf("video file: %s\n", filename);
         cap = cvCaptureFromFile(filename);
-    }else{
+    }
+    else
+    {
         cap = cvCaptureFromCAM(cam_index);
 
-        if(w){
+        if(w)
+        {
             cvSetCaptureProperty(cap, CV_CAP_PROP_FRAME_WIDTH, w);
         }
-        if(h){
+        if(h)
+        {
             cvSetCaptureProperty(cap, CV_CAP_PROP_FRAME_HEIGHT, h);
         }
-        if(frames){
+        if(frames)
+        {
             cvSetCaptureProperty(cap, CV_CAP_PROP_FPS, frames);
         }
     }
@@ -172,11 +194,15 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
     ipl = cvCreateImage(cvSize(buff[0].w,buff[0].h), IPL_DEPTH_8U, buff[0].c);
 
     int count = 0;
-    if(!prefix){
-        cvNamedWindow("Demo", CV_WINDOW_NORMAL); 
-        if(fullscreen){
+    if(!prefix)
+    {
+        cvNamedWindow("Demo", CV_WINDOW_NORMAL);
+        if(fullscreen)
+        {
             cvSetWindowProperty("Demo", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-        } else {
+        }
+        else
+        {
             cvMoveWindow("Demo", 0, 0);
             cvResizeWindow("Demo", 1352, 1013);
         }
@@ -184,15 +210,19 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
 
     demo_time = what_time_is_it_now();
 
-    while(!demo_done){
+    while(!demo_done)
+    {
         buff_index = (buff_index + 1) %3;
         if(pthread_create(&fetch_thread, 0, fetch_in_thread, 0)) error("Thread creation failed");
         if(pthread_create(&detect_thread, 0, detect_in_thread, 0)) error("Thread creation failed");
-        if(!prefix){
+        if(!prefix)
+        {
             fps = 1./(what_time_is_it_now() - demo_time);
             demo_time = what_time_is_it_now();
             display_in_thread(0);
-        }else{
+        }
+        else
+        {
             char name[256];
             sprintf(name, "%s_%08d", prefix, count);
             save_image(buff[(buff_index + 1)%3], name);
@@ -221,19 +251,25 @@ void demo_compare(char *cfg1, char *weight1, char *cfg2, char *weight2, float th
 
     srand(2222222);
 
-    if(filename){
+    if(filename)
+    {
         printf("video file: %s\n", filename);
         cap = cvCaptureFromFile(filename);
-    }else{
+    }
+    else
+    {
         cap = cvCaptureFromCAM(cam_index);
 
-        if(w){
+        if(w)
+        {
             cvSetCaptureProperty(cap, CV_CAP_PROP_FRAME_WIDTH, w);
         }
-        if(h){
+        if(h)
+        {
             cvSetCaptureProperty(cap, CV_CAP_PROP_FRAME_HEIGHT, h);
         }
-        if(frames){
+        if(frames)
+        {
             cvSetCaptureProperty(cap, CV_CAP_PROP_FPS, frames);
         }
     }
@@ -260,11 +296,15 @@ void demo_compare(char *cfg1, char *weight1, char *cfg2, char *weight2, float th
     ipl = cvCreateImage(cvSize(buff[0].w,buff[0].h), IPL_DEPTH_8U, buff[0].c);
 
     int count = 0;
-    if(!prefix){
-        cvNamedWindow("Demo", CV_WINDOW_NORMAL); 
-        if(fullscreen){
+    if(!prefix)
+    {
+        cvNamedWindow("Demo", CV_WINDOW_NORMAL);
+        if(fullscreen)
+        {
             cvSetWindowProperty("Demo", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-        } else {
+        }
+        else
+        {
             cvMoveWindow("Demo", 0, 0);
             cvResizeWindow("Demo", 1352, 1013);
         }
@@ -272,15 +312,19 @@ void demo_compare(char *cfg1, char *weight1, char *cfg2, char *weight2, float th
 
     demo_time = what_time_is_it_now();
 
-    while(!demo_done){
+    while(!demo_done)
+    {
         buff_index = (buff_index + 1) %3;
         if(pthread_create(&fetch_thread, 0, fetch_in_thread, 0)) error("Thread creation failed");
         if(pthread_create(&detect_thread, 0, detect_in_thread, 0)) error("Thread creation failed");
-        if(!prefix){
+        if(!prefix)
+        {
             fps = 1./(what_time_is_it_now() - demo_time);
             demo_time = what_time_is_it_now();
             display_in_thread(0);
-        }else{
+        }
+        else
+        {
             char name[256];
             sprintf(name, "%s_%08d", prefix, count);
             save_image(buff[(buff_index + 1)%3], name);

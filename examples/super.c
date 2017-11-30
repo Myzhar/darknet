@@ -32,7 +32,8 @@ void train_super(char *cfgfile, char *weightfile, int clear)
     pthread_t load_thread = load_data_in_thread(args);
     clock_t time;
     //while(i*imgs < N*120){
-    while(get_current_batch(net) < net->max_batches){
+    while(get_current_batch(net) < net->max_batches)
+    {
         i += 1;
         time=clock();
         pthread_join(load_thread, 0);
@@ -47,12 +48,14 @@ void train_super(char *cfgfile, char *weightfile, int clear)
         avg_loss = avg_loss*.9 + loss*.1;
 
         printf("%d: %f, %f avg, %f rate, %lf seconds, %d images\n", i, loss, avg_loss, get_current_rate(net), sec(clock()-time), i*imgs);
-        if(i%1000==0){
+        if(i%1000==0)
+        {
             char buff[256];
             sprintf(buff, "%s/%s_%d.weights", backup_directory, base, i);
             save_weights(net, buff);
         }
-        if(i%100==0){
+        if(i%100==0)
+        {
             char buff[256];
             sprintf(buff, "%s/%s.backup", backup_directory, base);
             save_weights(net, buff);
@@ -73,10 +76,14 @@ void test_super(char *cfgfile, char *weightfile, char *filename)
     clock_t time;
     char buff[256];
     char *input = buff;
-    while(1){
-        if(filename){
+    while(1)
+    {
+        if(filename)
+        {
             strncpy(input, filename, 256);
-        }else{
+        }
+        else
+        {
             printf("Enter Image Path: ");
             fflush(stdout);
             input = fgets(input, 256, stdin);
@@ -102,7 +109,8 @@ void test_super(char *cfgfile, char *weightfile, char *filename)
 
 void run_super(int argc, char **argv)
 {
-    if(argc < 4){
+    if(argc < 4)
+    {
         fprintf(stderr, "usage: %s %s [train/test/valid] [cfg] [weights (optional)]\n", argv[0], argv[1]);
         return;
     }

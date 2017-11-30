@@ -34,15 +34,18 @@ __global__ void backward_scale_kernel(float *x_norm, float *delta, int batch, in
     int filter = blockIdx.x;
     int p = threadIdx.x;
     float sum = 0;
-    for(b = 0; b < batch; ++b){
-        for(i = 0; i < size; i += BLOCK){
+    for(b = 0; b < batch; ++b)
+    {
+        for(i = 0; i < size; i += BLOCK)
+        {
             int index = p + i + size*(filter + n*b);
             sum += (p+i < size) ? delta[index]*x_norm[index] : 0;
         }
     }
     part[p] = sum;
     __syncthreads();
-    if (p == 0) {
+    if (p == 0)
+    {
         for(i = 0; i < BLOCK; ++i) scale_updates[filter] += part[i];
     }
 }
@@ -80,7 +83,8 @@ __global__ void backward_bias_conn_kernel(float *bias_updates, float *delta, int
     if (index >= n) return;
     int b;
     float sum = 0;
-    for(b = 0; b < batch; ++b){
+    for(b = 0; b < batch; ++b)
+    {
         int i = b*n + index;
         sum += delta[i];
     }
@@ -94,24 +98,30 @@ __global__ void backward_bias_kernel(float *bias_updates, float *delta, int batc
     int filter = blockIdx.x;
     int p = threadIdx.x;
     float sum = 0;
-    for(b = 0; b < batch; ++b){
-        for(i = 0; i < size; i += BLOCK){
+    for(b = 0; b < batch; ++b)
+    {
+        for(i = 0; i < size; i += BLOCK)
+        {
             int index = p + i + size*(filter + n*b);
             sum += (p+i < size) ? delta[index] : 0;
         }
     }
     part[p] = sum;
     __syncthreads();
-    if (p == 0) {
+    if (p == 0)
+    {
         for(i = 0; i < BLOCK; ++i) bias_updates[filter] += part[i];
     }
 }
 
 void backward_bias_gpu(float *bias_updates, float *delta, int batch, int n, int size)
 {
-    if(size == 1){
+    if(size == 1)
+    {
         backward_bias_conn_kernel<<<cuda_gridsize(n), BLOCK>>>(bias_updates, delta, batch, n);
-    }else{
+    }
+    else
+    {
         backward_bias_kernel<<<n, BLOCK>>>(bias_updates, delta, batch, n, size);
     }
     check_error(cudaPeekAtLastError());
@@ -124,7 +134,7 @@ __global__ void dot_kernel(float *output, float scale, int batch, int n, int siz
     int f1 = index / n;
     int f2 = index % n;
     if (f2 <= f1) return;
-    
+
     float sum = 0;
     float norm1 = 0;
     float norm2 = 0;
@@ -164,7 +174,7 @@ __global__ void adam_kernel(int N, float *x, float *m, float *v, float B1, float
 {
     int index = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
     if (index >= N) return;
-    
+
     x[index] = x[index] + (rate * sqrtf(1.f-powf(B2, t)) / (1.f-powf(B1, t)) * m[index] / (sqrtf(v[index]) + eps));
 }
 
@@ -193,7 +203,7 @@ __global__ void normalize_kernel(int N, float *x, float *mean, float *variance, 
     int index = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
     if (index >= N) return;
     int f = (index/spatial)%filters;
-    
+
     x[index] = (x[index] - mean[f])/(sqrtf(variance[f] + .00001f));
 }
 
@@ -202,7 +212,7 @@ __global__ void normalize_delta_kernel(int N, float *x, float *mean, float *vari
     int index = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
     if (index >= N) return;
     int f = (index/spatial)%filters;
-    
+
     delta[index] = delta[index] * 1.f/(sqrtf(variance[f] + .00001f)) + variance_delta[f] * 2.f * (x[index] - mean[f]) / (spatial * batch) + mean_delta[f]/(spatial*batch);
 }
 
@@ -219,8 +229,10 @@ __global__ void  variance_delta_kernel(float *x, float *delta, float *mean, floa
     if (i >= filters) return;
     int j,k;
     variance_delta[i] = 0;
-    for(j = 0; j < batch; ++j){
-        for(k = 0; k < spatial; ++k){
+    for(j = 0; j < batch; ++j)
+    {
+        for(k = 0; k < spatial; ++k)
+        {
             int index = j*filters*spatial + i*spatial + k;
             variance_delta[i] += delta[index]*(x[index] - mean[i]);
         }
@@ -234,7 +246,8 @@ __global__ void accumulate_kernel(float *x, int n, int groups, float *sum)
     int i = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
     if (i >= groups) return;
     sum[i] = 0;
-    for(k = 0; k < n; ++k){
+    for(k = 0; k < n; ++k)
+    {
         sum[i] += x[k*groups + i];
     }
 }
@@ -250,8 +263,10 @@ __global__ void fast_mean_delta_kernel(float *delta, float *variance, int batch,
     int filter = blockIdx.x;
 
     int i, j;
-    for(j = 0; j < batch; ++j){
-        for(i = 0; i < spatial; i += threads){
+    for(j = 0; j < batch; ++j)
+    {
+        for(i = 0; i < spatial; i += threads)
+        {
             int index = j*spatial*filters + filter*spatial + i + id;
             local[id] += (i+id < spatial) ? delta[index] : 0;
         }
@@ -259,9 +274,11 @@ __global__ void fast_mean_delta_kernel(float *delta, float *variance, int batch,
 
     __syncthreads();
 
-    if(id == 0){
+    if(id == 0)
+    {
         mean_delta[filter] = 0;
-        for(i = 0; i < threads; ++i){
+        for(i = 0; i < threads; ++i)
+        {
             mean_delta[filter] += local[i];
         }
         mean_delta[filter] *= (-1.f/sqrtf(variance[filter] + .00001f));
@@ -279,8 +296,10 @@ __global__ void  fast_variance_delta_kernel(float *x, float *delta, float *mean,
     int filter = blockIdx.x;
 
     int i, j;
-    for(j = 0; j < batch; ++j){
-        for(i = 0; i < spatial; i += threads){
+    for(j = 0; j < batch; ++j)
+    {
+        for(i = 0; i < spatial; i += threads)
+        {
             int index = j*spatial*filters + filter*spatial + i + id;
 
             local[id] += (i+id < spatial) ? delta[index]*(x[index] - mean[filter]) : 0;
@@ -289,9 +308,11 @@ __global__ void  fast_variance_delta_kernel(float *x, float *delta, float *mean,
 
     __syncthreads();
 
-    if(id == 0){
+    if(id == 0)
+    {
         variance_delta[filter] = 0;
-        for(i = 0; i < threads; ++i){
+        for(i = 0; i < threads; ++i)
+        {
             variance_delta[filter] += local[i];
         }
         variance_delta[filter] *= -.5f * powf(variance[filter] + .00001f, (float)(-3.f/2.f));
@@ -305,8 +326,10 @@ __global__ void mean_delta_kernel(float *delta, float *variance, int batch, int 
     if (i >= filters) return;
     int j,k;
     mean_delta[i] = 0;
-    for (j = 0; j < batch; ++j) {
-        for (k = 0; k < spatial; ++k) {
+    for (j = 0; j < batch; ++j)
+    {
+        for (k = 0; k < spatial; ++k)
+        {
             int index = j*filters*spatial + i*spatial + k;
             mean_delta[i] += delta[index];
         }
@@ -339,8 +362,10 @@ __global__ void  mean_kernel(float *x, int batch, int filters, int spatial, floa
     if (i >= filters) return;
     int j,k;
     mean[i] = 0;
-    for(j = 0; j < batch; ++j){
-        for(k = 0; k < spatial; ++k){
+    for(j = 0; j < batch; ++j)
+    {
+        for(k = 0; k < spatial; ++k)
+        {
             int index = j*filters*spatial + i*spatial + k;
             mean[i] += x[index];
         }
@@ -355,8 +380,10 @@ __global__ void variance_kernel(float *x, float *mean, int batch, int filters, i
     int i = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
     if (i >= filters) return;
     variance[i] = 0;
-    for(j = 0; j < batch; ++j){
-        for(k = 0; k < spatial; ++k){
+    for(j = 0; j < batch; ++j)
+    {
+        for(k = 0; k < spatial; ++k)
+        {
             int index = j*filters*spatial + i*spatial + k;
             variance[i] += powf((x[index] - mean[i]), 2);
         }
@@ -386,7 +413,7 @@ __global__ void reorg_kernel(int N, float *x, int w, int h, int c, int batch, in
     //printf("%d\n", offset);
     int out_index = w2 + w*stride*(h2 + h*stride*(c2 + out_c*b));
 
-   // printf("%d %d %d\n", w2, h2, c2);
+    // printf("%d %d %d\n", w2, h2, c2);
     //printf("%d %d\n", in_index, out_index);
     //if(out_index >= N || out_index < 0) printf("bad bad bad \n");
 
@@ -423,7 +450,8 @@ __global__ void constrain_kernel(int N, float ALPHA, float *X, int INCX)
 __global__ void supp_kernel(int N, float ALPHA, float *X, int INCX)
 {
     int i = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
-    if(i < N) {
+    if(i < N)
+    {
         if((X[i*INCX] * X[i*INCX]) < (ALPHA * ALPHA)) X[i*INCX] = 0;
     }
 }
@@ -483,8 +511,10 @@ __global__ void  fast_mean_kernel(float *x, int batch, int filters, int spatial,
     int filter = blockIdx.x;
 
     int i, j;
-    for(j = 0; j < batch; ++j){
-        for(i = 0; i < spatial; i += threads){
+    for(j = 0; j < batch; ++j)
+    {
+        for(i = 0; i < spatial; i += threads)
+        {
             int index = j*spatial*filters + filter*spatial + i + id;
             local[id] += (i+id < spatial) ? x[index] : 0;
         }
@@ -492,9 +522,11 @@ __global__ void  fast_mean_kernel(float *x, int batch, int filters, int spatial,
 
     __syncthreads();
 
-    if(id == 0){
+    if(id == 0)
+    {
         mean[filter] = 0;
-        for(i = 0; i < threads; ++i){
+        for(i = 0; i < threads; ++i)
+        {
             mean[filter] += local[i];
         }
         mean[filter] /= spatial * batch;
@@ -512,8 +544,10 @@ __global__ void  fast_variance_kernel(float *x, float *mean, int batch, int filt
     int filter = blockIdx.x;
 
     int i, j;
-    for(j = 0; j < batch; ++j){
-        for(i = 0; i < spatial; i += threads){
+    for(j = 0; j < batch; ++j)
+    {
+        for(i = 0; i < spatial; i += threads)
+        {
             int index = j*spatial*filters + filter*spatial + i + id;
 
             local[id] += (i+id < spatial) ? powf((x[index] - mean[filter]), 2) : 0;
@@ -522,9 +556,11 @@ __global__ void  fast_variance_kernel(float *x, float *mean, int batch, int filt
 
     __syncthreads();
 
-    if(id == 0){
+    if(id == 0)
+    {
         variance[filter] = 0;
-        for(i = 0; i < threads; ++i){
+        for(i = 0; i < threads; ++i)
+        {
             variance[filter] += local[i];
         }
         variance[filter] /= (spatial * batch - 1);
@@ -714,14 +750,17 @@ extern "C" void shortcut_gpu(int batch, int w1, int h1, int c1, float *add, int 
 __global__ void smooth_l1_kernel(int n, float *pred, float *truth, float *delta, float *error)
 {
     int i = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
-    if(i < n){
+    if(i < n)
+    {
         float diff = truth[i] - pred[i];
         float abs_val = fabsf(diff);
-        if(abs_val < 1) {
+        if(abs_val < 1)
+        {
             error[i] = diff * diff;
             delta[i] = diff;
         }
-        else {
+        else
+        {
             error[i] = 2*abs_val - 1;
             delta[i] = (diff > 0) ? 1 : -1;
         }
@@ -737,7 +776,8 @@ extern "C" void smooth_l1_gpu(int n, float *pred, float *truth, float *delta, fl
 __global__ void l2_kernel(int n, float *pred, float *truth, float *delta, float *error)
 {
     int i = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
-    if(i < n){
+    if(i < n)
+    {
         float diff = truth[i] - pred[i];
         error[i] = diff * diff; //I know this is technically wrong, deal with it.
         delta[i] = diff;
@@ -753,7 +793,8 @@ extern "C" void l2_gpu(int n, float *pred, float *truth, float *delta, float *er
 __global__ void l1_kernel(int n, float *pred, float *truth, float *delta, float *error)
 {
     int i = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
-    if(i < n){
+    if(i < n)
+    {
         float diff = truth[i] - pred[i];
         error[i] = abs(diff);
         delta[i] = (diff > 0) ? 1 : -1;
@@ -772,7 +813,8 @@ extern "C" void l1_gpu(int n, float *pred, float *truth, float *delta, float *er
 __global__ void weighted_sum_kernel(int n, float *a, float *b, float *s, float *c)
 {
     int i = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
-    if(i < n){
+    if(i < n)
+    {
         c[i] = s[i]*a[i] + (1-s[i])*(b ? b[i] : 0);
     }
 }
@@ -780,12 +822,16 @@ __global__ void weighted_sum_kernel(int n, float *a, float *b, float *s, float *
 __global__ void deinter_kernel(int NX, float *X, int NY, float *Y, int B, float *OUT)
 {
     int i = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
-    if(i < (NX+NY)*B){
+    if(i < (NX+NY)*B)
+    {
         int b = i / (NX+NY);
         int j = i % (NX+NY);
-        if (j < NX){
+        if (j < NX)
+        {
             if(X) X[b*NX + j] += OUT[i];
-        } else {
+        }
+        else
+        {
             if(Y) Y[b*NY + j - NX] += OUT[i];
         }
     }
@@ -800,12 +846,16 @@ extern "C" void deinter_gpu(int NX, float *X, int NY, float *Y, int B, float *OU
 __global__ void inter_kernel(int NX, float *X, int NY, float *Y, int B, float *OUT)
 {
     int i = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
-    if(i < (NX+NY)*B){
+    if(i < (NX+NY)*B)
+    {
         int b = i / (NX+NY);
         int j = i % (NX+NY);
-        if (j < NX){
+        if (j < NX)
+        {
             OUT[i] = X[b*NX + j];
-        } else {
+        }
+        else
+        {
             OUT[i] = Y[b*NY + j - NX];
         }
     }
@@ -826,7 +876,8 @@ extern "C" void weighted_sum_gpu(float *a, float *b, float *s, int num, float *c
 __global__ void weighted_delta_kernel(int n, float *a, float *b, float *s, float *da, float *db, float *ds, float *dc)
 {
     int i = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
-    if(i < n){
+    if(i < n)
+    {
         if(da) da[i] += dc[i] * s[i];
         if(db) db[i] += dc[i] * (1-s[i]);
         ds[i] += dc[i] * (a[i] - b[i]);
@@ -842,7 +893,8 @@ extern "C" void weighted_delta_gpu(float *a, float *b, float *s, float *da, floa
 __global__ void mult_add_into_kernel(int n, float *a, float *b, float *c)
 {
     int i = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
-    if(i < n){
+    if(i < n)
+    {
         c[i] += a[i]*b[i];
     }
 }
@@ -859,16 +911,19 @@ __device__ void softmax_device(float *input, int n, float temp, int stride, floa
     int i;
     float sum = 0;
     float largest = -INFINITY;
-    for(i = 0; i < n; ++i){
+    for(i = 0; i < n; ++i)
+    {
         int val = input[i*stride];
         largest = (val>largest) ? val : largest;
     }
-    for(i = 0; i < n; ++i){
+    for(i = 0; i < n; ++i)
+    {
         float e = expf(input[i*stride]/temp - largest/temp);
         sum += e;
         output[i*stride] = e;
     }
-    for(i = 0; i < n; ++i){
+    for(i = 0; i < n; ++i)
+    {
         output[i*stride] /= sum;
     }
 }

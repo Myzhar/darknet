@@ -152,41 +152,41 @@ void train_lsd3(char *fcfg, char *fweight, char *gcfg, char *gweight, char *acfg
         show_image(sim, "style");
         cvWaitKey(0);
         */
-        /*
+/*
 
-        harmless_update_network_gpu(anet);
+harmless_update_network_gpu(anet);
 
-        data merge = concat_data(style, generated);
-        randomize_data(merge);
-        float aloss = train_network(anet, merge);
+data merge = concat_data(style, generated);
+randomize_data(merge);
+float aloss = train_network(anet, merge);
 
-        update_network_gpu(gnet);
+update_network_gpu(gnet);
 
-        free_data(merge);
-        free_data(train);
-        free_data(generated);
-        free_data(style);
-        if (aloss_avg < 0) aloss_avg = aloss;
-        if (floss_avg < 0) floss_avg = floss;
-        aloss_avg = aloss_avg*.9 + aloss*.1;
-        floss_avg = floss_avg*.9 + floss*.1;
+free_data(merge);
+free_data(train);
+free_data(generated);
+free_data(style);
+if (aloss_avg < 0) aloss_avg = aloss;
+if (floss_avg < 0) floss_avg = floss;
+aloss_avg = aloss_avg*.9 + aloss*.1;
+floss_avg = floss_avg*.9 + floss*.1;
 
-        printf("%d: gen: %f, adv: %f | gen_avg: %f, adv_avg: %f, %f rate, %lf seconds, %d images\n", i, floss, aloss, floss_avg, aloss_avg, get_current_rate(gnet), sec(clock()-time), i*imgs);
-        if(i%1000==0){
-            char buff[256];
-            sprintf(buff, "%s/%s_%d.weights", backup_directory, gbase, i);
-            save_weights(gnet, buff);
-            sprintf(buff, "%s/%s_%d.weights", backup_directory, abase, i);
-            save_weights(anet, buff);
-        }
-        if(i%100==0){
-            char buff[256];
-            sprintf(buff, "%s/%s.backup", backup_directory, gbase);
-            save_weights(gnet, buff);
-            sprintf(buff, "%s/%s.backup", backup_directory, abase);
-            save_weights(anet, buff);
-        }
-    }
+printf("%d: gen: %f, adv: %f | gen_avg: %f, adv_avg: %f, %f rate, %lf seconds, %d images\n", i, floss, aloss, floss_avg, aloss_avg, get_current_rate(gnet), sec(clock()-time), i*imgs);
+if(i%1000==0){
+    char buff[256];
+    sprintf(buff, "%s/%s_%d.weights", backup_directory, gbase, i);
+    save_weights(gnet, buff);
+    sprintf(buff, "%s/%s_%d.weights", backup_directory, abase, i);
+    save_weights(anet, buff);
+}
+if(i%100==0){
+    char buff[256];
+    sprintf(buff, "%s/%s.backup", backup_directory, gbase);
+    save_weights(gnet, buff);
+    sprintf(buff, "%s/%s.backup", backup_directory, abase);
+    save_weights(anet, buff);
+}
+}
 #endif
 }
 */
@@ -307,78 +307,78 @@ void train_pix2pix(char *cfg, char *weight, char *acfg, char *aweight, int clear
             cuda_push_array(gstate.input, graypixs, x_size);
             cuda_push_array(gstate.truth, pixs, y_size);
             */
-            /*
-            image origi = float_to_image(net->w, net->h, 3, pixs);
-            image grayi = float_to_image(net->w, net->h, 3, graypixs);
-            show_image(grayi, "gray");
-            show_image(origi, "orig");
-            cvWaitKey(0);
-            */
-            /*
-            *net->seen += net->batch;
-            forward_network_gpu(net, gstate);
+/*
+image origi = float_to_image(net->w, net->h, 3, pixs);
+image grayi = float_to_image(net->w, net->h, 3, graypixs);
+show_image(grayi, "gray");
+show_image(origi, "orig");
+cvWaitKey(0);
+*/
+/*
+*net->seen += net->batch;
+forward_network_gpu(net, gstate);
 
-            fill_gpu(imlayer.outputs, 0, imerror, 1);
-            astate.input = imlayer.output_gpu;
-            astate.delta = imerror;
-            astate.truth = ones_gpu;
-            forward_network_gpu(anet, astate);
-            backward_network_gpu(anet, astate);
+fill_gpu(imlayer.outputs, 0, imerror, 1);
+astate.input = imlayer.output_gpu;
+astate.delta = imerror;
+astate.truth = ones_gpu;
+forward_network_gpu(anet, astate);
+backward_network_gpu(anet, astate);
 
-            scal_gpu(imlayer.outputs, .1, net->layers[net->n-1].delta_gpu, 1);
+scal_gpu(imlayer.outputs, .1, net->layers[net->n-1].delta_gpu, 1);
 
-            backward_network_gpu(net, gstate);
+backward_network_gpu(net, gstate);
 
-            scal_gpu(imlayer.outputs, 1000, imerror, 1);
+scal_gpu(imlayer.outputs, 1000, imerror, 1);
 
-            printf("realness %f\n", cuda_mag_array(imerror, imlayer.outputs));
-            printf("features %f\n", cuda_mag_array(net->layers[net->n-1].delta_gpu, imlayer.outputs));
+printf("realness %f\n", cuda_mag_array(imerror, imlayer.outputs));
+printf("features %f\n", cuda_mag_array(net->layers[net->n-1].delta_gpu, imlayer.outputs));
 
-            axpy_gpu(imlayer.outputs, 1, imerror, 1, imlayer.delta_gpu, 1);
+axpy_gpu(imlayer.outputs, 1, imerror, 1, imlayer.delta_gpu, 1);
 
-            gloss += get_network_cost(net) /(net->subdivisions*net->batch);
+gloss += get_network_cost(net) /(net->subdivisions*net->batch);
 
-            cuda_pull_array(imlayer.output_gpu, imlayer.output, imlayer.outputs*imlayer.batch);
-            for(k = 0; k < net->batch; ++k){
-                int index = j*net->batch + k;
-                copy_cpu(imlayer.outputs, imlayer.output + k*imlayer.outputs, 1, gray.X.vals[index], 1);
-                gray.y.vals[index][0] = .1;
-            }
-        }
-        harmless_update_network_gpu(anet);
+cuda_pull_array(imlayer.output_gpu, imlayer.output, imlayer.outputs*imlayer.batch);
+for(k = 0; k < net->batch; ++k){
+    int index = j*net->batch + k;
+    copy_cpu(imlayer.outputs, imlayer.output + k*imlayer.outputs, 1, gray.X.vals[index], 1);
+    gray.y.vals[index][0] = .1;
+}
+}
+harmless_update_network_gpu(anet);
 
-        data merge = concat_data(train, gray);
-        randomize_data(merge);
-        float aloss = train_network(anet, merge);
+data merge = concat_data(train, gray);
+randomize_data(merge);
+float aloss = train_network(anet, merge);
 
-        update_network_gpu(net);
-        update_network_gpu(anet);
-        free_data(merge);
-        free_data(train);
-        free_data(gray);
-        if (aloss_avg < 0) aloss_avg = aloss;
-        aloss_avg = aloss_avg*.9 + aloss*.1;
-        gloss_avg = gloss_avg*.9 + gloss*.1;
+update_network_gpu(net);
+update_network_gpu(anet);
+free_data(merge);
+free_data(train);
+free_data(gray);
+if (aloss_avg < 0) aloss_avg = aloss;
+aloss_avg = aloss_avg*.9 + aloss*.1;
+gloss_avg = gloss_avg*.9 + gloss*.1;
 
-        printf("%d: gen: %f, adv: %f | gen_avg: %f, adv_avg: %f, %f rate, %lf seconds, %d images\n", i, gloss, aloss, gloss_avg, aloss_avg, get_current_rate(net), sec(clock()-time), i*imgs);
-        if(i%1000==0){
-            char buff[256];
-            sprintf(buff, "%s/%s_%d.weights", backup_directory, base, i);
-            save_weights(net, buff);
-            sprintf(buff, "%s/%s_%d.weights", backup_directory, abase, i);
-            save_weights(anet, buff);
-        }
-        if(i%100==0){
-            char buff[256];
-            sprintf(buff, "%s/%s.backup", backup_directory, base);
-            save_weights(net, buff);
-            sprintf(buff, "%s/%s.backup", backup_directory, abase);
-            save_weights(anet, buff);
-        }
-    }
-    char buff[256];
-    sprintf(buff, "%s/%s_final.weights", backup_directory, base);
-    save_weights(net, buff);
+printf("%d: gen: %f, adv: %f | gen_avg: %f, adv_avg: %f, %f rate, %lf seconds, %d images\n", i, gloss, aloss, gloss_avg, aloss_avg, get_current_rate(net), sec(clock()-time), i*imgs);
+if(i%1000==0){
+char buff[256];
+sprintf(buff, "%s/%s_%d.weights", backup_directory, base, i);
+save_weights(net, buff);
+sprintf(buff, "%s/%s_%d.weights", backup_directory, abase, i);
+save_weights(anet, buff);
+}
+if(i%100==0){
+char buff[256];
+sprintf(buff, "%s/%s.backup", backup_directory, base);
+save_weights(net, buff);
+sprintf(buff, "%s/%s.backup", backup_directory, abase);
+save_weights(anet, buff);
+}
+}
+char buff[256];
+sprintf(buff, "%s/%s_final.weights", backup_directory, base);
+save_weights(net, buff);
 #endif
 }
 */
@@ -394,18 +394,22 @@ void test_dcgan(char *cfgfile, char *weightfile)
     char *input = buff;
     int i, imlayer = 0;
 
-    for (i = 0; i < net->n; ++i) {
-        if (net->layers[i].out_c == 3) {
+    for (i = 0; i < net->n; ++i)
+    {
+        if (net->layers[i].out_c == 3)
+        {
             imlayer = i;
             printf("%d\n", i);
             break;
         }
     }
 
-    while(1){
+    while(1)
+    {
         image im = make_image(net->w, net->h, net->c);
         int i;
-        for(i = 0; i < im.w*im.h*im.c; ++i){
+        for(i = 0; i < im.w*im.h*im.c; ++i)
+        {
             im.data[i] = rand_normal();
         }
 
@@ -453,8 +457,10 @@ void train_dcgan(char *cfg, char *weight, char *acfg, char *aweight, int clear, 
     int start = 0;
     int i, j, k;
     layer imlayer = {0};
-    for (i = 0; i < gnet->n; ++i) {
-        if (gnet->layers[i].out_c == 3) {
+    for (i = 0; i < gnet->n; ++i)
+    {
+        if (gnet->layers[i].out_c == 3)
+        {
             imlayer = gnet->layers[i];
             break;
         }
@@ -497,8 +503,9 @@ void train_dcgan(char *cfg, char *weight, char *acfg, char *aweight, int clear, 
 
     //data generated = copy_data(train);
 
-    while (get_current_batch(gnet) < gnet->max_batches) {
-    start += 1;
+    while (get_current_batch(gnet) < gnet->max_batches)
+    {
+        start += 1;
         i += 1;
         time=clock();
         pthread_join(load_thread, 0);
@@ -512,16 +519,19 @@ void train_dcgan(char *cfg, char *weight, char *acfg, char *aweight, int clear, 
         printf("Loaded: %lf seconds\n", sec(clock()-time));
 
         data gen = copy_data(train);
-        for (j = 0; j < imgs; ++j) {
+        for (j = 0; j < imgs; ++j)
+        {
             train.y.vals[j][0] = .95;
             gen.y.vals[j][0] = .05;
         }
         time=clock();
 
-        for(j = 0; j < gnet->subdivisions; ++j){
+        for(j = 0; j < gnet->subdivisions; ++j)
+        {
             get_next_batch(train, gnet->batch, j*gnet->batch, gnet->truth, 0);
             int z;
-            for(z = 0; z < x_size; ++z){
+            for(z = 0; z < x_size; ++z)
+            {
                 gnet->input[z] = rand_normal();
             }
 
@@ -550,7 +560,8 @@ void train_dcgan(char *cfg, char *weight, char *acfg, char *aweight, int clear, 
 
             backward_network_gpu(gnet);
 
-            for(k = 0; k < gnet->batch; ++k){
+            for(k = 0; k < gnet->batch; ++k)
+            {
                 int index = j*gnet->batch + k;
                 copy_cpu(gnet->outputs, gnet->output + k*gnet->outputs, 1, gen.X.vals[index], 1);
             }
@@ -565,23 +576,24 @@ void train_dcgan(char *cfg, char *weight, char *acfg, char *aweight, int clear, 
         //scale_image(im, .5);
         //translate_image(im2, 1);
         //scale_image(im2, .5);
-            #ifdef OPENCV
-        if(display){
+#ifdef OPENCV
+        if(display)
+        {
             image im = float_to_image(anet->w, anet->h, anet->c, gen.X.vals[0]);
             image im2 = float_to_image(anet->w, anet->h, anet->c, train.X.vals[0]);
             show_image(im, "gen");
             show_image(im2, "train");
             cvWaitKey(50);
         }
-        #endif
+#endif
 
-/*
-        if(aloss < .1){
-            anet->learning_rate = 0;
-        } else if (aloss > .3){
-            anet->learning_rate = orig_rate;
-        }
-        */
+        /*
+                if(aloss < .1){
+                    anet->learning_rate = 0;
+                } else if (aloss > .3){
+                    anet->learning_rate = orig_rate;
+                }
+                */
 
         update_network_gpu(gnet);
 
@@ -592,14 +604,16 @@ void train_dcgan(char *cfg, char *weight, char *acfg, char *aweight, int clear, 
         aloss_avg = aloss_avg*.9 + aloss*.1;
 
         printf("%d: adv: %f | adv_avg: %f, %f rate, %lf seconds, %d images\n", i, aloss, aloss_avg, get_current_rate(gnet), sec(clock()-time), i*imgs);
-        if(i%10000==0){
+        if(i%10000==0)
+        {
             char buff[256];
             sprintf(buff, "%s/%s_%d.weights", backup_directory, base, i);
             save_weights(gnet, buff);
             sprintf(buff, "%s/%s_%d.weights", backup_directory, abase, i);
             save_weights(anet, buff);
         }
-        if(i%1000==0){
+        if(i%1000==0)
+        {
             char buff[256];
             sprintf(buff, "%s/%s.backup", backup_directory, base);
             save_weights(gnet, buff);
@@ -629,8 +643,10 @@ void train_colorizer(char *cfg, char *weight, char *acfg, char *aweight, int cle
 
     int i, j, k;
     layer imlayer = {0};
-    for (i = 0; i < net->n; ++i) {
-        if (net->layers[i].out_c == 3) {
+    for (i = 0; i < net->n; ++i)
+    {
+        if (net->layers[i].out_c == 3)
+        {
             imlayer = net->layers[i];
             break;
         }
@@ -679,7 +695,8 @@ void train_colorizer(char *cfg, char *weight, char *acfg, char *aweight, int cle
 
     //data generated = copy_data(train);
 
-    while (get_current_batch(net) < net->max_batches) {
+    while (get_current_batch(net) < net->max_batches)
+    {
         i += 1;
         time=clock();
         pthread_join(load_thread, 0);
@@ -689,7 +706,8 @@ void train_colorizer(char *cfg, char *weight, char *acfg, char *aweight, int cle
         printf("Loaded: %lf seconds\n", sec(clock()-time));
 
         data gray = copy_data(train);
-        for(j = 0; j < imgs; ++j){
+        for(j = 0; j < imgs; ++j)
+        {
             image gim = float_to_image(net->w, net->h, net->c, gray.X.vals[j]);
             grayscale_image_3c(gim);
             train.y.vals[j][0] = .95;
@@ -698,7 +716,8 @@ void train_colorizer(char *cfg, char *weight, char *acfg, char *aweight, int cle
         time=clock();
         float gloss = 0;
 
-        for(j = 0; j < net->subdivisions; ++j){
+        for(j = 0; j < net->subdivisions; ++j)
+        {
             get_next_batch(train, net->batch, j*net->batch, pixs, 0);
             get_next_batch(gray, net->batch, j*net->batch, graypixs, 0);
             cuda_push_array(net->input_gpu, graypixs, net->inputs*net->batch);
@@ -734,7 +753,8 @@ void train_colorizer(char *cfg, char *weight, char *acfg, char *aweight, int cle
 
             gloss += *net->cost /(net->subdivisions*net->batch);
 
-            for(k = 0; k < net->batch; ++k){
+            for(k = 0; k < net->batch; ++k)
+            {
                 int index = j*net->batch + k;
                 copy_cpu(imlayer.outputs, imlayer.output + k*imlayer.outputs, 1, gray.X.vals[index], 1);
             }
@@ -747,15 +767,16 @@ void train_colorizer(char *cfg, char *weight, char *acfg, char *aweight, int cle
 
         update_network_gpu(net);
 
-            #ifdef OPENCV
-        if(display){
+#ifdef OPENCV
+        if(display)
+        {
             image im = float_to_image(anet->w, anet->h, anet->c, gray.X.vals[0]);
             image im2 = float_to_image(anet->w, anet->h, anet->c, train.X.vals[0]);
             show_image(im, "gen");
             show_image(im2, "train");
             cvWaitKey(50);
         }
-        #endif
+#endif
         free_data(merge);
         free_data(train);
         free_data(gray);
@@ -764,14 +785,16 @@ void train_colorizer(char *cfg, char *weight, char *acfg, char *aweight, int cle
         gloss_avg = gloss_avg*.9 + gloss*.1;
 
         printf("%d: gen: %f, adv: %f | gen_avg: %f, adv_avg: %f, %f rate, %lf seconds, %d images\n", i, gloss, aloss, gloss_avg, aloss_avg, get_current_rate(net), sec(clock()-time), i*imgs);
-        if(i%1000==0){
+        if(i%1000==0)
+        {
             char buff[256];
             sprintf(buff, "%s/%s_%d.weights", backup_directory, base, i);
             save_weights(net, buff);
             sprintf(buff, "%s/%s_%d.weights", backup_directory, abase, i);
             save_weights(anet, buff);
         }
-        if(i%100==0){
+        if(i%100==0)
+        {
             char buff[256];
             sprintf(buff, "%s/%s.backup", backup_directory, base);
             save_weights(net, buff);
@@ -1053,18 +1076,24 @@ void test_lsd(char *cfg, char *weights, char *filename, int gray)
     char *input = buff;
     int i, imlayer = 0;
 
-    for (i = 0; i < net->n; ++i) {
-        if (net->layers[i].out_c == 3) {
+    for (i = 0; i < net->n; ++i)
+    {
+        if (net->layers[i].out_c == 3)
+        {
             imlayer = i;
             printf("%d\n", i);
             break;
         }
     }
 
-    while(1){
-        if(filename){
+    while(1)
+    {
+        if(filename)
+        {
             strncpy(input, filename, 256);
-        }else{
+        }
+        else
+        {
             printf("Enter Image Path: ");
             fflush(stdout);
             input = fgets(input, 256, stdin);
@@ -1100,7 +1129,8 @@ void test_lsd(char *cfg, char *weights, char *filename, int gray)
 
 void run_lsd(int argc, char **argv)
 {
-    if(argc < 4){
+    if(argc < 4)
+    {
         fprintf(stderr, "usage: %s %s [train/test/valid] [cfg] [weights (optional)]\n", argv[0], argv[1]);
         return;
     }

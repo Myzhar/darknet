@@ -11,21 +11,24 @@ list *read_data_cfg(char *filename)
     char *line;
     int nu = 0;
     list *options = make_list();
-    while((line=fgetl(file)) != 0){
+    while((line=fgetl(file)) != 0)
+    {
         ++ nu;
         strip(line);
-        switch(line[0]){
-            case '\0':
-            case '#':
-            case ';':
+        switch(line[0])
+        {
+        case '\0':
+        case '#':
+        case ';':
+            free(line);
+            break;
+        default:
+            if(!read_option(line, options))
+            {
+                fprintf(stderr, "Config file error line %d, could parse: %s\n", nu, line);
                 free(line);
-                break;
-            default:
-                if(!read_option(line, options)){
-                    fprintf(stderr, "Config file error line %d, could parse: %s\n", nu, line);
-                    free(line);
-                }
-                break;
+            }
+            break;
         }
     }
     fclose(file);
@@ -39,9 +42,12 @@ metadata get_metadata(char *file)
 
     char *name_list = option_find_str(options, "names", 0);
     if(!name_list) name_list = option_find_str(options, "labels", 0);
-    if(!name_list) {
+    if(!name_list)
+    {
         fprintf(stderr, "No names or labels found\n");
-    } else {
+    }
+    else
+    {
         m.names = get_labels(name_list);
     }
     m.classes = option_find_int(options, "classes", 2);
@@ -54,8 +60,10 @@ int read_option(char *s, list *options)
     size_t i;
     size_t len = strlen(s);
     char *val = 0;
-    for(i = 0; i < len; ++i){
-        if(s[i] == '='){
+    for(i = 0; i < len; ++i)
+    {
+        if(s[i] == '=')
+        {
             s[i] = '\0';
             val = s+i+1;
             break;
@@ -79,9 +87,11 @@ void option_insert(list *l, char *key, char *val)
 void option_unused(list *l)
 {
     node *n = l->front;
-    while(n){
+    while(n)
+    {
         kvp *p = (kvp *)n->val;
-        if(!p->used){
+        if(!p->used)
+        {
             fprintf(stderr, "Unused field: '%s = %s'\n", p->key, p->val);
         }
         n = n->next;
@@ -91,9 +101,11 @@ void option_unused(list *l)
 char *option_find(list *l, char *key)
 {
     node *n = l->front;
-    while(n){
+    while(n)
+    {
         kvp *p = (kvp *)n->val;
-        if(strcmp(p->key, key) == 0){
+        if(strcmp(p->key, key) == 0)
+        {
             p->used = 1;
             return p->val;
         }

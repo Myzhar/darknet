@@ -54,17 +54,21 @@ void forward_detection_layer(const detection_layer l, network net)
     memcpy(l.output, net.input, l.outputs*l.batch*sizeof(float));
     //if(l.reorg) reorg(l.output, l.w*l.h, size*l.n, l.batch, 1);
     int b;
-    if (l.softmax){
-        for(b = 0; b < l.batch; ++b){
+    if (l.softmax)
+    {
+        for(b = 0; b < l.batch; ++b)
+        {
             int index = b*l.inputs;
-            for (i = 0; i < locations; ++i) {
+            for (i = 0; i < locations; ++i)
+            {
                 int offset = i*l.classes;
                 softmax(l.output + index + offset, l.classes, 1, 1,
                         l.output + index + offset);
             }
         }
     }
-    if(net.train){
+    if(net.train)
+    {
         float avg_iou = 0;
         float avg_cat = 0;
         float avg_allcat = 0;
@@ -74,12 +78,15 @@ void forward_detection_layer(const detection_layer l, network net)
         *(l.cost) = 0;
         int size = l.inputs * l.batch;
         memset(l.delta, 0, size * sizeof(float));
-        for (b = 0; b < l.batch; ++b){
+        for (b = 0; b < l.batch; ++b)
+        {
             int index = b*l.inputs;
-            for (i = 0; i < locations; ++i) {
+            for (i = 0; i < locations; ++i)
+            {
                 int truth_index = (b*locations + i)*(1+l.coords+l.classes);
                 int is_obj = net.truth[truth_index];
-                for (j = 0; j < l.n; ++j) {
+                for (j = 0; j < l.n; ++j)
+                {
                     int p_index = index + locations*l.classes + i*l.n + j;
                     l.delta[p_index] = l.noobject_scale*(0 - l.output[p_index]);
                     *(l.cost) += l.noobject_scale*pow(l.output[p_index], 2);
@@ -90,12 +97,14 @@ void forward_detection_layer(const detection_layer l, network net)
                 float best_iou = 0;
                 float best_rmse = 20;
 
-                if (!is_obj){
+                if (!is_obj)
+                {
                     continue;
                 }
 
                 int class_index = index + i*l.classes;
-                for(j = 0; j < l.classes; ++j) {
+                for(j = 0; j < l.classes; ++j)
+                {
                     l.delta[class_index+j] = l.class_scale * (net.truth[truth_index+1+j] - l.output[class_index+j]);
                     *(l.cost) += l.class_scale * pow(net.truth[truth_index+1+j] - l.output[class_index+j], 2);
                     if(net.truth[truth_index + 1 + j]) avg_cat += l.output[class_index+j];
@@ -106,13 +115,15 @@ void forward_detection_layer(const detection_layer l, network net)
                 truth.x /= l.side;
                 truth.y /= l.side;
 
-                for(j = 0; j < l.n; ++j){
+                for(j = 0; j < l.n; ++j)
+                {
                     int box_index = index + locations*(l.classes + l.n) + (i*l.n + j) * l.coords;
                     box out = float_to_box(l.output + box_index, 1);
                     out.x /= l.side;
                     out.y /= l.side;
 
-                    if (l.sqrt){
+                    if (l.sqrt)
+                    {
                         out.w = out.w*out.w;
                         out.h = out.h*out.h;
                     }
@@ -120,27 +131,37 @@ void forward_detection_layer(const detection_layer l, network net)
                     float iou  = box_iou(out, truth);
                     //iou = 0;
                     float rmse = box_rmse(out, truth);
-                    if(best_iou > 0 || iou > 0){
-                        if(iou > best_iou){
+                    if(best_iou > 0 || iou > 0)
+                    {
+                        if(iou > best_iou)
+                        {
                             best_iou = iou;
                             best_index = j;
                         }
-                    }else{
-                        if(rmse < best_rmse){
+                    }
+                    else
+                    {
+                        if(rmse < best_rmse)
+                        {
                             best_rmse = rmse;
                             best_index = j;
                         }
                     }
                 }
 
-                if(l.forced){
-                    if(truth.w*truth.h < .1){
+                if(l.forced)
+                {
+                    if(truth.w*truth.h < .1)
+                    {
                         best_index = 1;
-                    }else{
+                    }
+                    else
+                    {
                         best_index = 0;
                     }
                 }
-                if(l.random && *(net.seen) < 64000){
+                if(l.random && *(net.seen) < 64000)
+                {
                     best_index = rand()%l.n;
                 }
 
@@ -150,7 +171,8 @@ void forward_detection_layer(const detection_layer l, network net)
                 box out = float_to_box(l.output + box_index, 1);
                 out.x /= l.side;
                 out.y /= l.side;
-                if (l.sqrt) {
+                if (l.sqrt)
+                {
                     out.w = out.w*out.w;
                     out.h = out.h*out.h;
                 }
@@ -163,7 +185,8 @@ void forward_detection_layer(const detection_layer l, network net)
                 avg_obj += l.output[p_index];
                 l.delta[p_index] = l.object_scale * (1.-l.output[p_index]);
 
-                if(l.rescore){
+                if(l.rescore)
+                {
                     l.delta[p_index] = l.object_scale * (iou - l.output[p_index]);
                 }
 
@@ -171,7 +194,8 @@ void forward_detection_layer(const detection_layer l, network net)
                 l.delta[box_index+1] = l.coord_scale*(net.truth[tbox_index + 1] - l.output[box_index + 1]);
                 l.delta[box_index+2] = l.coord_scale*(net.truth[tbox_index + 2] - l.output[box_index + 2]);
                 l.delta[box_index+3] = l.coord_scale*(net.truth[tbox_index + 3] - l.output[box_index + 3]);
-                if(l.sqrt){
+                if(l.sqrt)
+                {
                     l.delta[box_index+2] = l.coord_scale*(sqrt(net.truth[tbox_index + 2]) - l.output[box_index + 2]);
                     l.delta[box_index+3] = l.coord_scale*(sqrt(net.truth[tbox_index + 3]) - l.output[box_index + 3]);
                 }
@@ -182,12 +206,16 @@ void forward_detection_layer(const detection_layer l, network net)
             }
         }
 
-        if(0){
+        if(0)
+        {
             float *costs = calloc(l.batch*locations*l.n, sizeof(float));
-            for (b = 0; b < l.batch; ++b) {
+            for (b = 0; b < l.batch; ++b)
+            {
                 int index = b*l.inputs;
-                for (i = 0; i < locations; ++i) {
-                    for (j = 0; j < l.n; ++j) {
+                for (i = 0; i < locations; ++i)
+                {
+                    for (j = 0; j < l.n; ++j)
+                    {
                         int p_index = index + locations*l.classes + i*l.n + j;
                         costs[b*locations*l.n + i*l.n + j] = l.delta[p_index]*l.delta[p_index];
                     }
@@ -196,10 +224,13 @@ void forward_detection_layer(const detection_layer l, network net)
             int indexes[100];
             top_k(costs, l.batch*locations*l.n, 100, indexes);
             float cutoff = costs[indexes[99]];
-            for (b = 0; b < l.batch; ++b) {
+            for (b = 0; b < l.batch; ++b)
+            {
                 int index = b*l.inputs;
-                for (i = 0; i < locations; ++i) {
-                    for (j = 0; j < l.n; ++j) {
+                for (i = 0; i < locations; ++i)
+                {
+                    for (j = 0; j < l.n; ++j)
+                    {
                         int p_index = index + locations*l.classes + i*l.n + j;
                         if (l.delta[p_index]*l.delta[p_index] < cutoff) l.delta[p_index] = 0;
                     }
@@ -227,10 +258,12 @@ void get_detection_boxes(layer l, int w, int h, float thresh, float **probs, box
     int i,j,n;
     float *predictions = l.output;
     //int per_cell = 5*num+classes;
-    for (i = 0; i < l.side*l.side; ++i){
+    for (i = 0; i < l.side*l.side; ++i)
+    {
         int row = i / l.side;
         int col = i % l.side;
-        for(n = 0; n < l.n; ++n){
+        for(n = 0; n < l.n; ++n)
+        {
             int index = i*l.n + n;
             int p_index = l.side*l.side*l.classes + i*l.n + n;
             float scale = predictions[p_index];
@@ -239,12 +272,14 @@ void get_detection_boxes(layer l, int w, int h, float thresh, float **probs, box
             boxes[index].y = (predictions[box_index + 1] + row) / l.side * h;
             boxes[index].w = pow(predictions[box_index + 2], (l.sqrt?2:1)) * w;
             boxes[index].h = pow(predictions[box_index + 3], (l.sqrt?2:1)) * h;
-            for(j = 0; j < l.classes; ++j){
+            for(j = 0; j < l.classes; ++j)
+            {
                 int class_index = i*l.classes;
                 float prob = scale*predictions[class_index+j];
                 probs[index][j] = (prob > thresh) ? prob : 0;
             }
-            if(only_objectness){
+            if(only_objectness)
+            {
                 probs[index][0] = scale;
             }
         }
@@ -255,7 +290,8 @@ void get_detection_boxes(layer l, int w, int h, float thresh, float **probs, box
 
 void forward_detection_layer_gpu(const detection_layer l, network net)
 {
-    if(!net.train){
+    if(!net.train)
+    {
         copy_gpu(l.batch*l.inputs, net.input_gpu, 1, l.output_gpu, 1);
         return;
     }

@@ -31,13 +31,15 @@ __global__ void forward_maxpool_layer_kernel(int n, int in_h, int in_w, int in_c
     float max = -INFINITY;
     int max_i = -1;
     int l, m;
-    for(l = 0; l < size; ++l){
-        for(m = 0; m < size; ++m){
+    for(l = 0; l < size; ++l)
+    {
+        for(m = 0; m < size; ++m)
+        {
             int cur_h = h_offset + i*stride + l;
             int cur_w = w_offset + j*stride + m;
             int index = cur_w + in_w*(cur_h + in_h*(k + b*in_c));
             int valid = (cur_h >= 0 && cur_h < in_h &&
-                    cur_w >= 0 && cur_w < in_w);
+                         cur_w >= 0 && cur_w < in_w);
             float val = (valid != 0) ? input[index] : -INFINITY;
             max_i = (val > max) ? index : max_i;
             max   = (val > max) ? val   : max;
@@ -71,13 +73,15 @@ __global__ void backward_maxpool_layer_kernel(int n, int in_h, int in_w, int in_
 
     float d = 0;
     int l, m;
-    for(l = -area; l < area+1; ++l){
-        for(m = -area; m < area+1; ++m){
+    for(l = -area; l < area+1; ++l)
+    {
+        for(m = -area; m < area+1; ++m)
+        {
             int out_w = (j-w_offset)/stride + m;
             int out_h = (i-h_offset)/stride + l;
             int out_index = out_w + w*(out_h + h*(k + c*b));
             int valid = (out_w >= 0 && out_w < w &&
-                     out_h >= 0 && out_h < h);
+                         out_h >= 0 && out_h < h);
             d += (valid && indexes[out_index] == index) ? delta[out_index] : 0;
         }
     }

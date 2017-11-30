@@ -2,7 +2,8 @@
 #define BOX_H
 #include "darknet.h"
 
-typedef struct{
+typedef struct
+{
     float dx, dy, dw, dh;
 } dbox;
 

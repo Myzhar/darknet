@@ -20,21 +20,25 @@ dbox derivative(box a, box b)
     d.dw = 0;
     float l1 = a.x - a.w/2;
     float l2 = b.x - b.w/2;
-    if (l1 > l2){
+    if (l1 > l2)
+    {
         d.dx -= 1;
         d.dw += .5;
     }
     float r1 = a.x + a.w/2;
     float r2 = b.x + b.w/2;
-    if(r1 < r2){
+    if(r1 < r2)
+    {
         d.dx += 1;
         d.dw += .5;
     }
-    if (l1 > r2) {
+    if (l1 > r2)
+    {
         d.dx = -1;
         d.dw = 0;
     }
-    if (r1 < l2){
+    if (r1 < l2)
+    {
         d.dx = 1;
         d.dw = 0;
     }
@@ -43,21 +47,25 @@ dbox derivative(box a, box b)
     d.dh = 0;
     float t1 = a.y - a.h/2;
     float t2 = b.y - b.h/2;
-    if (t1 > t2){
+    if (t1 > t2)
+    {
         d.dy -= 1;
         d.dh += .5;
     }
     float b1 = a.y + a.h/2;
     float b2 = b.y + b.h/2;
-    if(b1 < b2){
+    if(b1 < b2)
+    {
         d.dy += 1;
         d.dh += .5;
     }
-    if (t1 > b2) {
+    if (t1 > b2)
+    {
         d.dy = -1;
         d.dh = 0;
     }
-    if (b1 < t2){
+    if (b1 < t2)
+    {
         d.dy = 1;
         d.dh = 0;
     }
@@ -98,9 +106,9 @@ float box_iou(box a, box b)
 
 float box_rmse(box a, box b)
 {
-    return sqrt(pow(a.x-b.x, 2) + 
-                pow(a.y-b.y, 2) + 
-                pow(a.w-b.w, 2) + 
+    return sqrt(pow(a.x-b.x, 2) +
+                pow(a.y-b.y, 2) +
+                pow(a.w-b.w, 2) +
                 pow(a.h-b.h, 2));
 }
 
@@ -215,7 +223,8 @@ dbox diou(box a, box b)
     dbox du = dunion(a,b);
     dbox dd = {0,0,0,0};
 
-    if(i <= 0 || 1) {
+    if(i <= 0 || 1)
+    {
         dd.dx = b.x - a.x;
         dd.dy = b.y - a.y;
         dd.dw = b.w - a.w;
@@ -230,7 +239,8 @@ dbox diou(box a, box b)
     return dd;
 }
 
-typedef struct{
+typedef struct
+{
     int index;
     int class;
     float **probs;
@@ -251,20 +261,25 @@ void do_nms_obj(box *boxes, float **probs, int total, int classes, float thresh)
     int i, j, k;
     sortable_bbox *s = calloc(total, sizeof(sortable_bbox));
 
-    for(i = 0; i < total; ++i){
-        s[i].index = i;       
+    for(i = 0; i < total; ++i)
+    {
+        s[i].index = i;
         s[i].class = classes;
         s[i].probs = probs;
     }
 
     qsort(s, total, sizeof(sortable_bbox), nms_comparator);
-    for(i = 0; i < total; ++i){
+    for(i = 0; i < total; ++i)
+    {
         if(probs[s[i].index][classes] == 0) continue;
         box a = boxes[s[i].index];
-        for(j = i+1; j < total; ++j){
+        for(j = i+1; j < total; ++j)
+        {
             box b = boxes[s[j].index];
-            if (box_iou(a, b) > thresh){
-                for(k = 0; k < classes+1; ++k){
+            if (box_iou(a, b) > thresh)
+            {
+                for(k = 0; k < classes+1; ++k)
+                {
                     probs[s[j].index][k] = 0;
                 }
             }
@@ -279,23 +294,29 @@ void do_nms_sort(box *boxes, float **probs, int total, int classes, float thresh
     int i, j, k;
     sortable_bbox *s = calloc(total, sizeof(sortable_bbox));
 
-    for(i = 0; i < total; ++i){
-        s[i].index = i;       
+    for(i = 0; i < total; ++i)
+    {
+        s[i].index = i;
         s[i].class = 0;
         s[i].probs = probs;
     }
 
-    for(k = 0; k < classes; ++k){
-        for(i = 0; i < total; ++i){
+    for(k = 0; k < classes; ++k)
+    {
+        for(i = 0; i < total; ++i)
+        {
             s[i].class = k;
         }
         qsort(s, total, sizeof(sortable_bbox), nms_comparator);
-        for(i = 0; i < total; ++i){
+        for(i = 0; i < total; ++i)
+        {
             if(probs[s[i].index][k] == 0) continue;
             box a = boxes[s[i].index];
-            for(j = i+1; j < total; ++j){
+            for(j = i+1; j < total; ++j)
+            {
                 box b = boxes[s[j].index];
-                if (box_iou(a, b) > thresh){
+                if (box_iou(a, b) > thresh)
+                {
                     probs[s[j].index][k] = 0;
                 }
             }
@@ -307,15 +328,20 @@ void do_nms_sort(box *boxes, float **probs, int total, int classes, float thresh
 void do_nms(box *boxes, float **probs, int total, int classes, float thresh)
 {
     int i, j, k;
-    for(i = 0; i < total; ++i){
+    for(i = 0; i < total; ++i)
+    {
         int any = 0;
         for(k = 0; k < classes; ++k) any = any || (probs[i][k] > 0);
-        if(!any) {
+        if(!any)
+        {
             continue;
         }
-        for(j = i+1; j < total; ++j){
-            if (box_iou(boxes[i], boxes[j]) > thresh){
-                for(k = 0; k < classes; ++k){
+        for(j = i+1; j < total; ++j)
+        {
+            if (box_iou(boxes[i], boxes[j]) > thresh)
+            {
+                for(k = 0; k < classes; ++k)
+                {
                     if (probs[i][k] < probs[j][k]) probs[i][k] = 0;
                     else probs[j][k] = 0;
                 }

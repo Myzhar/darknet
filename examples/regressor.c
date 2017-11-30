@@ -14,7 +14,8 @@ void train_regressor(char *datacfg, char *cfgfile, char *weightfile, int *gpus, 
 
     srand(time(0));
     int seed = rand();
-    for(i = 0; i < ngpus; ++i){
+    for(i = 0; i < ngpus; ++i)
+    {
         srand(seed);
 #ifdef GPU
         cuda_set_device(gpus[i]);
@@ -65,7 +66,8 @@ void train_regressor(char *datacfg, char *cfgfile, char *weightfile, int *gpus, 
     load_thread = load_data(args);
 
     int epoch = (*net->seen)/N;
-    while(get_current_batch(net) < net->max_batches || net->max_batches == 0){
+    while(get_current_batch(net) < net->max_batches || net->max_batches == 0)
+    {
         time=clock();
 
         pthread_join(load_thread, 0);
@@ -77,9 +79,12 @@ void train_regressor(char *datacfg, char *cfgfile, char *weightfile, int *gpus, 
 
         float loss = 0;
 #ifdef GPU
-        if(ngpus == 1){
+        if(ngpus == 1)
+        {
             loss = train_network(net, train);
-        } else {
+        }
+        else
+        {
             loss = train_networks(nets, ngpus, train, 4);
         }
 #else
@@ -89,13 +94,15 @@ void train_regressor(char *datacfg, char *cfgfile, char *weightfile, int *gpus, 
         avg_loss = avg_loss*.9 + loss*.1;
         printf("%ld, %.3f: %f, %f avg, %f rate, %lf seconds, %ld images\n", get_current_batch(net), (float)(*net->seen)/N, loss, avg_loss, get_current_rate(net), sec(clock()-time), *net->seen);
         free_data(train);
-        if(*net->seen/N > epoch){
+        if(*net->seen/N > epoch)
+        {
             epoch = *net->seen/N;
             char buff[256];
             sprintf(buff, "%s/%s_%d.weights",backup_directory,base, epoch);
             save_weights(net, buff);
         }
-        if(get_current_batch(net)%100 == 0){
+        if(get_current_batch(net)%100 == 0)
+        {
             char buff[256];
             sprintf(buff, "%s/%s.backup",backup_directory,base);
             save_weights(net, buff);
@@ -120,10 +127,14 @@ void predict_regressor(char *cfgfile, char *weightfile, char *filename)
     clock_t time;
     char buff[256];
     char *input = buff;
-    while(1){
-        if(filename){
+    while(1)
+    {
+        if(filename)
+        {
             strncpy(input, filename, 256);
-        }else{
+        }
+        else
+        {
             printf("Enter Image Path: ");
             fflush(stdout);
             input = fgets(input, 256, stdin);
@@ -155,18 +166,22 @@ void demo_regressor(char *datacfg, char *cfgfile, char *weightfile, int cam_inde
     srand(2222222);
     CvCapture * cap;
 
-    if(filename){
+    if(filename)
+    {
         cap = cvCaptureFromFile(filename);
-    }else{
+    }
+    else
+    {
         cap = cvCaptureFromCAM(cam_index);
     }
 
     if(!cap) error("Couldn't connect to webcam.\n");
-    cvNamedWindow("Regressor", CV_WINDOW_NORMAL); 
+    cvNamedWindow("Regressor", CV_WINDOW_NORMAL);
     cvResizeWindow("Regressor", 512, 512);
     float fps = 0;
 
-    while(1){
+    while(1)
+    {
         struct timeval tval_before, tval_after, tval_result;
         gettimeofday(&tval_before, NULL);
 
@@ -198,7 +213,8 @@ void demo_regressor(char *datacfg, char *cfgfile, char *weightfile, int cam_inde
 
 void run_regressor(int argc, char **argv)
 {
-    if(argc < 4){
+    if(argc < 4)
+    {
         fprintf(stderr, "usage: %s %s [train/test/valid] [cfg] [weights (optional)]\n", argv[0], argv[1]);
         return;
     }
@@ -207,20 +223,25 @@ void run_regressor(int argc, char **argv)
     int *gpus = 0;
     int gpu = 0;
     int ngpus = 0;
-    if(gpu_list){
+    if(gpu_list)
+    {
         printf("%s\n", gpu_list);
         int len = strlen(gpu_list);
         ngpus = 1;
         int i;
-        for(i = 0; i < len; ++i){
+        for(i = 0; i < len; ++i)
+        {
             if (gpu_list[i] == ',') ++ngpus;
         }
         gpus = calloc(ngpus, sizeof(int));
-        for(i = 0; i < ngpus; ++i){
+        for(i = 0; i < ngpus; ++i)
+        {
             gpus[i] = atoi(gpu_list);
             gpu_list = strchr(gpu_list, ',')+1;
         }
-    } else {
+    }
+    else
+    {
         gpu = gpu_index;
         gpus = &gpu;
         ngpus = 1;

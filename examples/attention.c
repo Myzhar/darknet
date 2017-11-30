@@ -6,9 +6,11 @@
 void extend_data_truth(data *d, int n, float val)
 {
     int i, j;
-    for(i = 0; i < d->y.rows; ++i){
+    for(i = 0; i < d->y.rows; ++i)
+    {
         d->y.vals[i] = realloc(d->y.vals[i], (d->y.cols+n)*sizeof(float));
-        for(j = 0; j < n; ++j){
+        for(j = 0; j < n; ++j)
+        {
             d->y.vals[i][d->y.cols + j] = val;
         }
     }
@@ -22,8 +24,10 @@ matrix network_loss_data(network *net, data test)
     matrix pred = make_matrix(test.X.rows, k);
     float *X = calloc(net->batch*test.X.cols, sizeof(float));
     float *y = calloc(net->batch*test.y.cols, sizeof(float));
-    for(i = 0; i < test.X.rows; i += net->batch){
-        for(b = 0; b < net->batch; ++b){
+    for(i = 0; i < test.X.rows; i += net->batch)
+    {
+        for(b = 0; b < net->batch; ++b)
+        {
             if(i+b == test.X.rows) break;
             memcpy(X+b*test.X.cols, test.X.vals[i+b], test.X.cols*sizeof(float));
             memcpy(y+b*test.y.cols, test.y.vals[i+b], test.y.cols*sizeof(float));
@@ -38,7 +42,8 @@ matrix network_loss_data(network *net, data test)
         *net = orig;
 
         float *delta = net->layers[net->n-1].output;
-        for(b = 0; b < net->batch; ++b){
+        for(b = 0; b < net->batch; ++b)
+        {
             if(i+b == test.X.rows) break;
             int t = max_index(y + b*test.y.cols, 1000);
             float err = sum_array(delta + b*net->outputs, net->outputs);
@@ -48,7 +53,7 @@ matrix network_loss_data(network *net, data test)
     }
     free(X);
     free(y);
-    return pred;   
+    return pred;
 }
 
 void train_attention(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int ngpus, int clear)
@@ -64,7 +69,8 @@ void train_attention(char *datacfg, char *cfgfile, char *weightfile, int *gpus, 
 
     srand(time(0));
     int seed = rand();
-    for(i = 0; i < ngpus; ++i){
+    for(i = 0; i < ngpus; ++i)
+    {
         srand(seed);
 #ifdef GPU
         cuda_set_device(gpus[i]);
@@ -124,7 +130,8 @@ void train_attention(char *datacfg, char *cfgfile, char *weightfile, int *gpus, 
     load_thread = load_data(args);
 
     int epoch = (*net->seen)/N;
-    while(get_current_batch(net) < net->max_batches || net->max_batches == 0){
+    while(get_current_batch(net) < net->max_batches || net->max_batches == 0)
+    {
         time = what_time_is_it_now();
 
         pthread_join(load_thread, 0);
@@ -140,36 +147,45 @@ void train_attention(char *datacfg, char *cfgfile, char *weightfile, int *gpus, 
         float aloss = 0;
         float closs = 0;
         int z;
-        for (i = 0; i < divs*divs/ngpus; ++i) {
-#pragma omp parallel for
-            for(j = 0; j < ngpus; ++j){
+        for (i = 0; i < divs*divs/ngpus; ++i)
+        {
+            #pragma omp parallel for
+            for(j = 0; j < ngpus; ++j)
+            {
                 int index = i*ngpus + j;
                 extend_data_truth(tiles+index, divs*divs, SECRET_NUM);
                 matrix deltas = network_loss_data(nets[j], tiles[index]);
-                for(z = 0; z < resized.y.rows; ++z){
+                for(z = 0; z < resized.y.rows; ++z)
+                {
                     resized.y.vals[z][train.y.cols + index] = deltas.vals[z][0];
                 }
                 free_matrix(deltas);
             }
         }
         int *inds = calloc(resized.y.rows, sizeof(int));
-        for(z = 0; z < resized.y.rows; ++z){
+        for(z = 0; z < resized.y.rows; ++z)
+        {
             int index = max_index(resized.y.vals[z] + train.y.cols, divs*divs);
             inds[z] = index;
-            for(i = 0; i < divs*divs; ++i){
+            for(i = 0; i < divs*divs; ++i)
+            {
                 resized.y.vals[z][train.y.cols + i] = (i == index)? 1 : 0;
             }
         }
         data best = select_data(tiles, inds);
         free(inds);
-        #ifdef GPU
-        if (ngpus == 1) {
+#ifdef GPU
+        if (ngpus == 1)
+        {
             closs = train_network(net, best);
-        } else {
+        }
+        else
+        {
             closs = train_networks(nets, ngpus, best, 4);
         }
-        #endif
-        for (i = 0; i < divs*divs; ++i) {
+#endif
+        for (i = 0; i < divs*divs; ++i)
+        {
             printf("%.2f ", resized.y.vals[0][train.y.cols + i]);
             if((i+1)%divs == 0) printf("\n");
             free_data(tiles[i]);
@@ -186,13 +202,17 @@ void train_attention(char *datacfg, char *cfgfile, char *weightfile, int *gpus, 
            show_image(im2, "res");
          */
 #ifdef GPU
-        if (ngpus == 1) {
+        if (ngpus == 1)
+        {
             aloss = train_network(net, resized);
-        } else {
+        }
+        else
+        {
             aloss = train_networks(nets, ngpus, resized, 4);
         }
 #endif
-        for(i = 0; i < divs*divs; ++i){
+        for(i = 0; i < divs*divs; ++i)
+        {
             printf("%f ", nets[0]->output[1000 + i]);
             if ((i+1) % divs == 0) printf("\n");
         }
@@ -206,13 +226,15 @@ void train_attention(char *datacfg, char *cfgfile, char *weightfile, int *gpus, 
         avg_att_loss = avg_att_loss*.9 + aloss*.1;
 
         printf("%ld, %.3f: Att: %f, %f avg, Class: %f, %f avg, %f rate, %lf seconds, %ld images\n", get_current_batch(net), (float)(*net->seen)/N, aloss, avg_att_loss, closs, avg_cls_loss, get_current_rate(net), what_time_is_it_now()-time, *net->seen);
-        if(*net->seen/N > epoch){
+        if(*net->seen/N > epoch)
+        {
             epoch = *net->seen/N;
             char buff[256];
             sprintf(buff, "%s/%s_%d.weights",backup_directory,base, epoch);
             save_weights(net, buff);
         }
-        if(get_current_batch(net)%1000 == 0){
+        if(get_current_batch(net)%1000 == 0)
+        {
             char buff[256];
             sprintf(buff, "%s/%s.backup",backup_directory,base);
             save_weights(net, buff);
@@ -262,11 +284,14 @@ void validate_attention_single(char *datacfg, char *filename, char *weightfile)
     float *avgs = calloc(classes, sizeof(float));
     int *inds = calloc(divs*divs, sizeof(int));
 
-    for(i = 0; i < m; ++i){
+    for(i = 0; i < m; ++i)
+    {
         int class = -1;
         char *path = paths[i];
-        for(j = 0; j < classes; ++j){
-            if(strstr(path, labels[j])){
+        for(j = 0; j < classes; ++j)
+        {
+            if(strstr(path, labels[j]))
+            {
                 class = j;
                 break;
             }
@@ -280,7 +305,8 @@ void validate_attention_single(char *datacfg, char *filename, char *weightfile)
         //cvWaitKey(0);
         float *pred = network_predict(net, rcrop.data);
         //pred[classes + 56] = 0;
-        for(j = 0; j < divs*divs; ++j){
+        for(j = 0; j < divs*divs; ++j)
+        {
             printf("%.2f ", pred[classes + j]);
             if((j+1)%divs == 0) printf("\n");
         }
@@ -288,7 +314,8 @@ void validate_attention_single(char *datacfg, char *filename, char *weightfile)
         copy_cpu(classes, pred, 1, avgs, 1);
         top_k(pred + classes, divs*divs, divs*divs, inds);
         show_image(crop, "crop");
-        for(j = 0; j < extra; ++j){
+        for(j = 0; j < extra; ++j)
+        {
             int index = inds[j];
             int row = index / divs;
             int col = index % divs;
@@ -310,7 +337,8 @@ void validate_attention_single(char *datacfg, char *filename, char *weightfile)
         top_k(pred, classes, topk, indexes);
 
         if(indexes[0] == class) avg_acc += 1;
-        for(j = 0; j < topk; ++j){
+        for(j = 0; j < topk; ++j)
+        {
             if(indexes[j] == class) avg_topk += 1;
         }
 
@@ -345,22 +373,26 @@ void validate_attention_multi(char *datacfg, char *filename, char *weightfile)
     float avg_topk = 0;
     int *indexes = calloc(topk, sizeof(int));
 
-    for(i = 0; i < m; ++i){
+    for(i = 0; i < m; ++i)
+    {
         int class = -1;
         char *path = paths[i];
-        for(j = 0; j < classes; ++j){
-            if(strstr(path, labels[j])){
+        for(j = 0; j < classes; ++j)
+        {
+            if(strstr(path, labels[j]))
+            {
                 class = j;
                 break;
             }
         }
         float *pred = calloc(classes, sizeof(float));
         image im = load_image_color(paths[i], 0, 0);
-        for(j = 0; j < nscales; ++j){
+        for(j = 0; j < nscales; ++j)
+        {
             image r = resize_min(im, scales[j]);
             resize_network(net, r.w, r.h);
             float *p = network_predict(net, r.data);
-            if(net->hierarchy) hierarchy_predictions(p, net->outputs, net->hierarchy, 1 , 1);
+            if(net->hierarchy) hierarchy_predictions(p, net->outputs, net->hierarchy, 1, 1);
             axpy_cpu(classes, 1, p, 1, pred, 1);
             flip_image(r);
             p = network_predict(net, r.data);
@@ -371,7 +403,8 @@ void validate_attention_multi(char *datacfg, char *filename, char *weightfile)
         top_k(pred, classes, topk, indexes);
         free(pred);
         if(indexes[0] == class) avg_acc += 1;
-        for(j = 0; j < topk; ++j){
+        for(j = 0; j < topk; ++j)
+        {
             if(indexes[j] == class) avg_topk += 1;
         }
 
@@ -397,10 +430,14 @@ void predict_attention(char *datacfg, char *cfgfile, char *weightfile, char *fil
     int *indexes = calloc(top, sizeof(int));
     char buff[256];
     char *input = buff;
-    while(1){
-        if(filename){
+    while(1)
+    {
+        if(filename)
+        {
             strncpy(input, filename, 256);
-        }else{
+        }
+        else
+        {
             printf("Enter Image Path: ");
             fflush(stdout);
             input = fgets(input, 256, stdin);
@@ -418,7 +455,8 @@ void predict_attention(char *datacfg, char *cfgfile, char *weightfile, char *fil
         if(net->hierarchy) hierarchy_predictions(predictions, net->outputs, net->hierarchy, 1, 1);
         top_k(predictions, net->outputs, top, indexes);
         fprintf(stderr, "%s: Predicted in %f seconds.\n", input, sec(clock()-time));
-        for(i = 0; i < top; ++i){
+        for(i = 0; i < top; ++i)
+        {
             int index = indexes[i];
             //if(net->hierarchy) printf("%d, %s: %f, parent: %s \n",index, names[index], predictions[index], (net->hierarchy->parent[index] >= 0) ? names[net->hierarchy->parent[index]] : "Root");
             //else printf("%s: %f\n",names[index], predictions[index]);
@@ -433,7 +471,8 @@ void predict_attention(char *datacfg, char *cfgfile, char *weightfile, char *fil
 
 void run_attention(int argc, char **argv)
 {
-    if(argc < 4){
+    if(argc < 4)
+    {
         fprintf(stderr, "usage: %s %s [train/test/valid] [cfg] [weights (optional)]\n", argv[0], argv[1]);
         return;
     }
