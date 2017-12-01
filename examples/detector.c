@@ -59,10 +59,32 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     char csv_name[256];
     sprintf( csv_name, "%s/%s.csv", backup_directory, base );
 
-    FILE* csv = fopen(csv_name, "w");
+    char opt[2];
+    opt[1]='\0';
+    if(clear)
+    {
+        opt[0] = 'w';
+
+        printf( "Training info saved in new file %s", csv_name );
+    }
+    else
+    {
+        opt[0] = 'a';
+        printf( "Training info added to file %s", csv_name );
+    }
+
+    FILE* csv = fopen(csv_name, opt);
     if( csv )
     {
-        fprintf( csv, "\"Batch\", \"Loss\", \"Avg Loss\", \"L. Rate\", \"Elab. Time\", \"Images\" \n" );
+        if(clear)
+        {
+            fprintf( csv, "\"Batch\", \"Loss\", \"Avg Loss\", \"L. Rate\", \"Elab. Time\", \"Images\" \n" );
+        }
+        else
+        {
+            fprintf( csv, "############ Interrupted and restarted ############ \n");
+        }
+
         fclose(csv);
     }
     // <<<<< Save train CSV labels
@@ -141,11 +163,11 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
 #endif
         if (avg_loss < 0)
             avg_loss = loss;
-        float beta = 0.8; // About the average of the last 5 losses
+        float beta = 0.9; // About the average of the last 10 losses
         avg_loss = beta*avg_loss + (1-beta)*loss; // Exponential Weighted Average
 
         i = get_current_batch(net);
-        printf("Batch %ld: %g, %g avg, %g rate, elapsed %lf sec, processes %d images\n\n", get_current_batch(net), loss, avg_loss, get_current_rate(net), what_time_is_it_now()-time, i*imgs);
+        printf("Batch %ld: %g, %g avg, %g rate, elapsed %lf sec, processed %d images\n\n", get_current_batch(net), loss, avg_loss, get_current_rate(net), what_time_is_it_now()-time, i*imgs);
 
         // >>>>> Save train CSV
         char csv_name[256];
