@@ -1,4 +1,9 @@
 #include "darknet.h"
+#include <math.h>
+
+const int HRS_PER_DAY = 24;
+const int MIN_PER_HR = 60;
+const int SEC_PER_MIN = 60;
 
 static int coco_ids[] = {1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,20,21,22,23,24,25,27,28,31,32,33,34,35,36,37,38,39,40,41,42,43,44,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,67,70,72,73,74,75,76,77,78,79,80,81,82,84,85,86,87,88,89,90};
 
@@ -61,24 +66,24 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
 
     char opt[2];
     opt[1]='\0';
-    if(clear)
+    if(clear || (int)get_current_batch(net)==0)
     {
         opt[0] = 'w';
 
-        printf( "Training info saved in new file %s", csv_name );
+        printf( "Training info saved in new file %s\n", csv_name );
     }
     else
     {
         opt[0] = 'a';
-        printf( "Training info added to file %s", csv_name );
+        printf( "Training info added to file %s\n", csv_name );
     }
 
     FILE* csv = fopen(csv_name, opt);
     if( csv )
     {
-        if(clear)
+        if(clear || (int)get_current_batch(net)==0)
         {
-            fprintf( csv, "\"Batch\", \"Loss\", \"Avg Loss\", \"L. Rate\", \"Elab. Time\", \"Images\" \n" );
+            fprintf( csv,"\"Batch\", \"Loss\", \"Avg Loss\", \"L. Rate\", \"Elab. Time\", \"Images\" \n" );
         }
         else
         {
@@ -88,6 +93,8 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
         fclose(csv);
     }
     // <<<<< Save train CSV labels
+
+    double start_time = what_time_is_it_now();
 
     pthread_t load_thread = load_data(args);
     double time;
@@ -163,11 +170,33 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
 #endif
         if (avg_loss < 0)
             avg_loss = loss;
-        float beta = 0.9; // About the average of the last 10 losses
+        float beta = 0.98; // About the average of the last 50 losses
         avg_loss = beta*avg_loss + (1-beta)*loss; // Exponential Weighted Average
 
         i = get_current_batch(net);
-        printf("Batch %ld: %g, %g avg, %g rate, elapsed %lf sec, processed %d images\n\n", get_current_batch(net), loss, avg_loss, get_current_rate(net), what_time_is_it_now()-time, i*imgs);
+        printf("Batch %d/%d (%.1f%%): %g, %g avg, %g rate, elapsed %lf sec, processed %d images\n\n",
+               i, net->max_batches, 100.0*((double)i)/net->max_batches,
+               loss, avg_loss,
+               get_current_rate(net), what_time_is_it_now()-time, i*imgs);
+
+        double train_elapsed = what_time_is_it_now()-start_time;
+        double train_avg = train_elapsed/i;
+        double train_remain = train_avg*(net->max_batches-i);
+
+        int elapsed_days = (int)train_elapsed / SEC_PER_MIN / MIN_PER_HR / HRS_PER_DAY;
+        int elapsed_hours = ((int)train_elapsed / SEC_PER_MIN / MIN_PER_HR) % HRS_PER_DAY;
+        int elapsed_minutes = ((int)train_elapsed / SEC_PER_MIN) % 60;
+        double elapsed_seconds = fmod(train_elapsed,SEC_PER_MIN);
+
+        int remain_days = (int)train_remain / SEC_PER_MIN / MIN_PER_HR / HRS_PER_DAY;
+        int remain_hours = ((int)train_remain / SEC_PER_MIN / MIN_PER_HR) % HRS_PER_DAY;
+        int remain_minutes = ((int)train_remain / SEC_PER_MIN) % 60;
+        double remain_seconds = fmod(train_remain,SEC_PER_MIN);
+
+        printf( "Training since %d days %d hours %d minutes %g seconds\n",
+                elapsed_days,elapsed_hours,elapsed_minutes,elapsed_seconds);
+        printf( "Remaining: %d days %d hours %d minutes %g seconds\n\n",
+                remain_days,remain_hours,remain_minutes,remain_seconds);
 
         // >>>>> Save train CSV
         char csv_name[256];
@@ -754,7 +783,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
 void run_detector(int argc, char **argv)
 {
     char *prefix = find_char_arg(argc, argv, "-prefix", 0);
-    float thresh = find_float_arg(argc, argv, "-thresh", .24);
+    float thresh = find_float_arg(argc, argv, "-thresh", .15);
     float hier_thresh = find_float_arg(argc, argv, "-hier", .5);
     int cam_index = find_int_arg(argc, argv, "-c", 0);
     int frame_skip = find_int_arg(argc, argv, "-s", 0);

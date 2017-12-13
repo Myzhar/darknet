@@ -611,7 +611,8 @@ void parse_net_options(list *options, network *net)
     {
         char *l = option_find(options, "steps");
         char *p = option_find(options, "scales");
-        if(!l || !p) error("STEPS policy must have steps and scales in cfg file");
+        if(!l || !p)
+            error("STEPS policy must have steps and scales in cfg file");
 
         int len = strlen(l);
         int n = 1;

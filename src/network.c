@@ -96,6 +96,7 @@ float get_current_rate(network *net)
     float rate;
     if ((int)batch_num < net->burn_in)
         return net->learning_rate * pow((float)batch_num / net->burn_in, net->power);
+
     switch (net->policy)
     {
     case CONSTANT:

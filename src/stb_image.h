@@ -2114,7 +2114,7 @@ static void stbi__idct_block(stbi_uc *out, int out_stride, short data[64])
         // no fast case since the first 1D IDCT spread components out
         STBI__IDCT_1D(v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7])
         // constants scaled things up by 1<<12, plus we had 1<<2 from first
-        // loop, plus horizontal and vertical each scale by sqrt(8) so together
+        // loop, plus Horizonal and vertical each scale by sqrt(8) so together
         // we've got an extra 1<<3, so 1<<17 total we need to remove.
         // so we want to round that, which means adding 0.5 * 1<<17,
         // aka 65536. Also, we'll end up with -128 to 127 that we want
@@ -3086,7 +3086,7 @@ static stbi_uc* stbi__resample_row_v_2(stbi_uc *out, stbi_uc *in_near, stbi_uc *
 
 static stbi_uc*  stbi__resample_row_h_2(stbi_uc *out, stbi_uc *in_near, stbi_uc *in_far, int w, int hs)
 {
-    // need to generate two samples horizontally for every one in input
+    // need to generate two samples Horizonally for every one in input
     int i;
     stbi_uc *input = in_near;
 
@@ -3172,7 +3172,7 @@ static stbi_uc *stbi__resample_row_hv_2_simd(stbi_uc *out, stbi_uc *in_near, stb
         __m128i nears = _mm_slli_epi16(nearw, 2);
         __m128i curr  = _mm_add_epi16(nears, diff); // current row
 
-        // horizontal filter works the same based on shifted vers of current
+        // Horizonal filter works the same based on shifted vers of current
         // row. "prev" is current row shifted right by 1 pixel; we need to
         // insert the previous pixel value (from t1).
         // "next" is current row shifted left by 1 pixel, with first pixel
@@ -3182,7 +3182,7 @@ static stbi_uc *stbi__resample_row_hv_2_simd(stbi_uc *out, stbi_uc *in_near, stb
         __m128i prev = _mm_insert_epi16(prv0, t1, 0);
         __m128i next = _mm_insert_epi16(nxt0, 3*in_near[i+8] + in_far[i+8], 7);
 
-        // horizontal filter, polyphase implementation since it's convenient:
+        // Horizonal filter, polyphase implementation since it's convenient:
         // even pixels = 3*cur + prev = cur*4 + (prev - cur)
         // odd  pixels = 3*cur + next = cur*4 + (next - cur)
         // note the shared term.
@@ -3212,7 +3212,7 @@ static stbi_uc *stbi__resample_row_hv_2_simd(stbi_uc *out, stbi_uc *in_near, stb
         int16x8_t nears = vreinterpretq_s16_u16(vshll_n_u8(nearb, 2));
         int16x8_t curr  = vaddq_s16(nears, diff); // current row
 
-        // horizontal filter works the same based on shifted vers of current
+        // Horizonal filter works the same based on shifted vers of current
         // row. "prev" is current row shifted right by 1 pixel; we need to
         // insert the previous pixel value (from t1).
         // "next" is current row shifted left by 1 pixel, with first pixel
@@ -3222,7 +3222,7 @@ static stbi_uc *stbi__resample_row_hv_2_simd(stbi_uc *out, stbi_uc *in_near, stb
         int16x8_t prev = vsetq_lane_s16(t1, prv0, 0);
         int16x8_t next = vsetq_lane_s16(3*in_near[i+8] + in_far[i+8], nxt0, 7);
 
-        // horizontal filter, polyphase implementation since it's convenient:
+        // Horizonal filter, polyphase implementation since it's convenient:
         // even pixels = 3*cur + prev = cur*4 + (prev - cur)
         // odd  pixels = 3*cur + next = cur*4 + (next - cur)
         // note the shared term.
@@ -3567,7 +3567,7 @@ typedef struct
     resample_row_func resample;
     stbi_uc *line0,*line1;
     int hs,vs;   // expansion factor in each axis
-    int w_lores; // horizontal pixels pre-expansion
+    int w_lores; // Horizonal pixels pre-expansion
     int ystep;   // how far through vertical expansion we are
     int ypos;    // which pre-expansion row we're on
 } stbi__resample;
