@@ -66,7 +66,10 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
 
     char opt[2];
     opt[1]='\0';
-    if(clear || (int)get_current_batch(net)==0)
+
+    int startBatchIdx = (int)get_current_batch(net);
+
+    if(clear || startBatchIdx==0)
     {
         opt[0] = 'w';
 
@@ -81,7 +84,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     FILE* csv = fopen(csv_name, opt);
     if( csv )
     {
-        if(clear || (int)get_current_batch(net)==0)
+        if(clear || startBatchIdx==0)
         {
             fprintf( csv,"\"Batch\", \"Loss\", \"Avg Loss\", \"L. Rate\", \"Elab. Time\", \"Images\" \n" );
         }
@@ -179,8 +182,9 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
                loss, avg_loss,
                get_current_rate(net), what_time_is_it_now()-time, i*imgs);
 
+        // >>>>> Time information
         double train_elapsed = what_time_is_it_now()-start_time;
-        double train_avg = train_elapsed/i;
+        double train_avg = train_elapsed/(i-startBatchIdx);
         double train_remain = train_avg*(net->max_batches-i);
 
         int elapsed_days = (int)train_elapsed / SEC_PER_MIN / MIN_PER_HR / HRS_PER_DAY;
@@ -193,10 +197,11 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
         int remain_minutes = ((int)train_remain / SEC_PER_MIN) % 60;
         double remain_seconds = fmod(train_remain,SEC_PER_MIN);
 
-        printf( "Training since %d days %d hours %d minutes %g seconds\n",
-                elapsed_days,elapsed_hours,elapsed_minutes,elapsed_seconds);
+        printf( "Training since %d days %d hours %d minutes %g seconds (Started from batch #%d)\n",
+                elapsed_days,elapsed_hours,elapsed_minutes,elapsed_seconds,startBatchIdx);
         printf( "Remaining: %d days %d hours %d minutes %g seconds\n\n",
                 remain_days,remain_hours,remain_minutes,remain_seconds);
+        // <<<<< Time information
 
         // >>>>> Save train CSV
         char csv_name[256];
