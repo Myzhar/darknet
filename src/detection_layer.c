@@ -243,7 +243,13 @@ void forward_detection_layer(const detection_layer l, network net)
         *(l.cost) = pow(mag_array(l.delta, l.outputs * l.batch), 2);
 
 
-        printf("Detection Avg IOU: %f, Pos Cat: %f, All Cat: %f, Pos Obj: %f, Any Obj: %f, count: %d\n", avg_iou/count, avg_cat/count, avg_allcat/(count*l.classes), avg_obj/count, avg_anyobj/(l.batch*locations*l.n), count);
+        printf("Detection Avg IOU: %f, Pos Cat: %f, All Cat: %f, Pos Obj: %f, Any Obj: %f, count: %d\n",
+               avg_iou/count,
+               avg_cat/count,
+               avg_allcat/(count*l.classes),
+               avg_obj/count,
+               avg_anyobj/(l.batch*locations*l.n),
+               count);
         //if(l.reorg) reorg(l.delta, l.w*l.h, size*l.n, l.batch, 0);
     }
 }
@@ -276,7 +282,7 @@ void get_detection_boxes(layer l, int w, int h, float thresh, float **probs, box
             {
                 int class_index = i*l.classes;
                 float prob = scale*predictions[class_index+j];
-                probs[index][j] = (prob > thresh) ? prob : 0;
+                probs[index][j] = (prob >= thresh) ? prob : 0;
             }
             if(only_objectness)
             {

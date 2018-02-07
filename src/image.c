@@ -266,7 +266,7 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
             if (probs[i][j] > thresh)
             {
                 char buf[32];
-                sprintf( buf, " %.0f%%", probs[i][j]*100 );
+                sprintf( buf, " %.1f%%", probs[i][j]*100 );
 
                 if (class < 0)
                 {
@@ -280,7 +280,7 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
                     strcat(labelstr, names[j]);
                     strcat(labelstr, buf);
                 }
-                printf("%s: %.0f%%\n", names[j], probs[i][j]*100);
+                printf("%s: %.1f%%\n", names[j], probs[i][j]*100);
             }
         }
         if(class >= 0)

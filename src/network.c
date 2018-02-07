@@ -290,7 +290,15 @@ void backward_network(network *netp)
     for(i = net.n-1; i >= 0; --i)
     {
         layer l = net.layers[i];
-        if(l.stopbackward) break;
+
+        if(l.stopbackward)
+        {
+            //printf( "\nCPU Not backprop layer %d\n",i);
+            break;
+        }
+
+        //printf( "\nCPU Backprop layer %d\n",i);
+
         if(i == 0)
         {
             net = orig;
@@ -835,7 +843,14 @@ void backward_network_gpu(network *netp)
     for(i = net.n-1; i >= 0; --i)
     {
         layer l = net.layers[i];
-        if(l.stopbackward) break;
+        if(l.stopbackward)
+        {
+            //printf( "\nGPU Not backprop layer %d\n",i);
+            break;
+        }
+
+        //printf( "\nGPU Backprop layer %d\n",i);
+
         if(i == 0)
         {
             net = orig;
