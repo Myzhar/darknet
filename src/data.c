@@ -925,6 +925,7 @@ data load_data_compare(int n, char **paths, int m, int classes, int w, int h)
 
         find_replace(paths[i*2+1], "imgs", "labels", imlabel2);
         find_replace(imlabel2, "jpg", "txt", imlabel2);
+
         FILE *fp2 = fopen(imlabel2, "r");
 
         while(fscanf(fp2, "%d %f", &id, &iou) == 2)

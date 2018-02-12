@@ -10,6 +10,8 @@ static int coco_ids[] = {1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,20,21,22,2
 void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int ngpus, int clear)
 {
     int epoch=0;
+    int save10=0;
+    int save1=0;
 
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.list");
@@ -47,6 +49,9 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
 
     list *plist = get_paths(train_images);
     int ts_size = plist->size;
+
+    printf("Training Set size: %d images\n", ts_size );
+
     char **paths = (char **)list_to_array(plist);
 
     load_args args = get_base_args(net);
@@ -88,7 +93,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     {
         if(clear || startBatchIdx==0)
         {
-            fprintf( csv,"\"Batch\", \"Loss\", \"Avg Loss\", \"L. Rate\", \"Elab. Time\", \"Images\" \n" );
+            fprintf( csv,"\"Epoch\", \"Loss\", \"Avg Loss\", \"L. Rate\", \"Elab. Time\", \"Batch\", \"Images\" \n" );
         }
         else
         {
@@ -179,8 +184,21 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
         avg_loss = beta*avg_loss + (1-beta)*loss; // Exponential Weighted Average
 
         i = get_current_batch(net);
-        printf("Batch %d/%d (%.1f%%): %g, %g avg, %g rate, elapsed %lf sec, processed %d images\n\n",
-               i, net->max_batches, 100.0*((double)i)/net->max_batches,
+
+        int prev_epoch=epoch;
+        epoch = (i*imgs)/ts_size;
+        if( (prev_epoch!=epoch) )
+        {
+            save1=1;
+
+            if(epoch%10 == 0)
+            {
+                save10=1;
+            }
+        }
+
+        printf("[Epoch: %d] Batch %d/%d (%.1f%%): %g, %g avg, %g rate, elapsed %lf sec, processed %d images\n\n",
+               epoch, i, net->max_batches, 100.0*((double)i)/net->max_batches,
                loss, avg_loss,
                get_current_rate(net), what_time_is_it_now()-time, i*imgs);
 
@@ -205,19 +223,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
                 remain_days,remain_hours,remain_minutes,remain_seconds);
         // <<<<< Time information
 
-        // >>>>> Save train CSV
-        char csv_name[256];
-        sprintf( csv_name, "%s/%s.csv", backup_directory, base );
-
-        FILE* csv = fopen(csv_name, "a");
-        if( csv )
-        {
-            fprintf( csv, "%ld, %g, %g, %g, %g, %d \n", get_current_batch(net), loss, avg_loss, get_current_rate(net), what_time_is_it_now()-time, i*imgs);
-            fclose(csv);
-        }
-        // <<<<< Save train CSV
-
-        if(i%100==0)
+        if(i%100==0) // Backup saving
         {
 #ifdef GPU
             if(ngpus != 1) sync_nets(nets, ngpus, 0);
@@ -227,19 +233,43 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             save_weights(net, buff);
         }
 
-        epoch = i/ts_size+1;
-
-        if(i%10000==0 || (i < 1000 && i%100 == 0) || (i%ts_size == 0) )
+        // >>>>> Save train CSV
+        if( save1==1 ) // Saving PLOTS each 10 epochs
         {
+            save1=0;
+
+            char csv_name[256];
+            sprintf( csv_name, "%s/%s.csv", backup_directory, base );
+
+
+            FILE* csv = fopen(csv_name, "a");
+            if( csv )
+            {
+                fprintf( csv, "%d, %g, %g, %g, %g, %ld, %d \n",
+                         epoch, loss, avg_loss, get_current_rate(net), what_time_is_it_now()-time, get_current_batch(net), i*imgs);
+                fclose(csv);
+            }
+            // <<<<< Save train CSV
+        }
+
+        //if( /*i%10000==0 || (i < 1000 && i%100 == 0) )
+        if( save10==1 ) // Saving WEIGHTS each 10 epochs
+        {
+            save10=0;
 #ifdef GPU
             if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
             char buff[256];
-            sprintf(buff, "%s/%s_%d-epoch_%d.weights", backup_directory, base, i, epoch);
+            //sprintf(buff, "%s/%s_%d-epoch_%d.weights", backup_directory, base, i, epoch);
+            sprintf(buff, "%s/%s-epoch_%04d.weights", backup_directory, base, epoch);
             save_weights(net, buff);
+
+
+
         }
         free_data(train);
     }
+
 #ifdef GPU
     if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
@@ -709,7 +739,12 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
             }
         }
 
-        fprintf(stderr, "%5d %5d %5d\tRPs/Img: %.2f\tIOU: %.2f%%\tRecall:%.2f%%\n", i, correct, total, (float)proposals/(i+1), avg_iou*100/total, 100.*correct/total);
+        float iou = avg_iou*100.f/total;
+        float recall = 100.f*correct/total;
+        float myz_idx = 0.7*iou+0.3*recall;
+
+        fprintf(stderr, "%5d %5d %5d\tRPs/Img: %.2f\tIOU: %.2f%%\tRecall:%.2f%%\tMyz:%.3f%% \n",
+                i, correct, total, (float)proposals/(i+1), iou, recall, myz_idx);
         free(id);
         free_image(orig);
         free_image(sized);
