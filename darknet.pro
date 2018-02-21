@@ -15,7 +15,7 @@ TEMPLATE = app
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 
-OPTIONS = GPU CUDNN OPENCV OPENMP
+OPTIONS = GPU CUDNN OPENMP #OPENCV
 
 DEFINES += $$OPTIONS
 
