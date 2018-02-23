@@ -256,10 +256,17 @@ int nms_comparator(const void *pa, const void *pb)
     return 0;
 }
 
+static sortable_bbox *s;
+static int totalBboxes=0;
+
 void do_nms_obj(box *boxes, float **probs, int total, int classes, float thresh)
 {
     int i, j, k;
-    sortable_bbox *s = calloc(total, sizeof(sortable_bbox));
+    if(total>totalBboxes)
+    {
+        totalBboxes=total;
+        s = calloc(totalBboxes, sizeof(sortable_bbox));
+    }
 
     for(i = 0; i < total; ++i)
     {
@@ -269,6 +276,7 @@ void do_nms_obj(box *boxes, float **probs, int total, int classes, float thresh)
     }
 
     qsort(s, total, sizeof(sortable_bbox), nms_comparator);
+
     for(i = 0; i < total; ++i)
     {
         if(probs[s[i].index][classes] == 0) continue;
@@ -285,7 +293,8 @@ void do_nms_obj(box *boxes, float **probs, int total, int classes, float thresh)
             }
         }
     }
-    free(s);
+
+    //free(s);
 }
 
 
